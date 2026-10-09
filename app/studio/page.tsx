@@ -1,6 +1,17 @@
-import { requireChatGPTUser, chatGPTSignOutPath } from "@/app/chatgpt-auth";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { StudioDashboard } from "@/components/studio-dashboard";
+import { getAdminSession, safeReturnTo } from "@/lib/admin-auth";
 import { getSiteContent } from "@/lib/content-store";
-import { isSiteOwner } from "@/lib/owner-auth";
+
 export const dynamic = "force-dynamic";
-export default async function StudioPage(){const user=await requireChatGPTUser("/studio");if(!isSiteOwner(user))return <main className="access-denied"><p>此工作室只向网站所有者开放。</p><a href={chatGPTSignOutPath("/")} target="_top">退出当前账号</a></main>;const content=await getSiteContent(true);return <StudioDashboard initialContent={content} userName={user.displayName}/>}
+export const metadata: Metadata = { title: "工作室", robots: { index: false, follow: false } };
+
+export default async function StudioPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const session = await getAdminSession();
+  if (!session) redirect(`/login?returnTo=${encodeURIComponent(safeReturnTo("/studio"))}`);
+  const query = await searchParams;
+  const initialTab = query.tab === "essays" || query.tab === "favorites" ? query.tab : "series";
+  const content = await getSiteContent(true);
+  return <StudioDashboard initialContent={content} userName={session.username} csrfToken={session.csrfToken} initialTab={initialTab}/>;
+}

@@ -1,11 +1,10 @@
-import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { deleteEntity, getSiteContent, upsertEntity } from "@/lib/content-store";
-import { isSiteOwner } from "@/lib/owner-auth";
+import { getAdminSession, validateCsrf } from "@/lib/admin-auth";
 
-async function authorize() { const user = await getChatGPTUser(); return isSiteOwner(user); }
-export async function GET() { if (!(await authorize())) return Response.json({ error: "无权访问" }, { status: 403 }); return Response.json(await getSiteContent(true)); }
+export async function GET(request: Request) { if (!(await getAdminSession(request))) return Response.json({ error: "无权访问" }, { status: 403 }); return Response.json(await getSiteContent(true), { headers: { "cache-control": "no-store" } }); }
 export async function POST(request: Request) {
-  if (!(await authorize())) return Response.json({ error: "无权访问" }, { status: 403 });
+  const session = await getAdminSession(request);
+  if (!session || !validateCsrf(request, session)) return Response.json({ error: "无权访问" }, { status: 403 });
   try {
     const body = await request.json() as { action?: string; entity?: "series"|"photo"|"essay"|"favorite"; record?: Record<string,unknown>; id?: string };
     if (!body.entity || !["series","photo","essay","favorite"].includes(body.entity)) return Response.json({ error: "内容类型无效" }, { status: 400 });

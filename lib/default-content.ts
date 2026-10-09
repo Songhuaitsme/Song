@@ -1,7 +1,8 @@
 export type Photo = { id: string; seriesId: string; imageUrl: string; originalUrl: string; width: number; height: number; alt: string; caption: string; location: string; takenAt: string; sortOrder: number };
-export type Series = { id: string; slug: string; title: string; description: string; coverUrl: string; published: boolean; sortOrder: number; photos: Photo[] };
-export type Essay = { id: string; slug: string; title: string; excerpt: string; body: string; visibility: "public" | "private"; status: "draft" | "published"; publishedAt: string };
-export type Favorite = { id: string; title: string; category: string; note: string; imageUrl: string; url: string; sortOrder: number; published: boolean };
+export type AccessLevel = "draft" | "private" | "public";
+export type Series = { id: string; slug: string; title: string; description: string; coverUrl: string; access: AccessLevel; sortOrder: number; photos: Photo[] };
+export type Essay = { id: string; slug: string; title: string; excerpt: string; body: string; access: AccessLevel; publishedAt: string };
+export type Favorite = { id: string; title: string; category: string; note: string; imageUrl: string; url: string; access: AccessLevel; sortOrder: number };
 export type SiteContent = { series: Series[]; essays: Essay[]; favorites: Favorite[] };
 
 const photos: Photo[] = [
@@ -15,13 +16,13 @@ const photos: Photo[] = [
 ];
 
 export const defaultContent: SiteContent = {
-  series: [{ id: "series-between-mist-and-city", slug: "between-mist-and-city", title: "在雾与城之间", description: "沿着雨、桥与穿城而过的轨道，收集城市暂时失焦的时刻。", coverUrl: "/photos/01-fog-clock.webp", published: true, sortOrder: 1, photos }],
+  series: [{ id: "series-between-mist-and-city", slug: "between-mist-and-city", title: "在雾与城之间", description: "沿着雨、桥与穿城而过的轨道，收集城市暂时失焦的时刻。", coverUrl: "/photos/01-fog-clock.webp", access: "public", sortOrder: 1, photos }],
   essays: [
-    { id: "essay-rain-window", slug: "rain-on-the-window", title: "雨停在车窗上", excerpt: "有时拍照并不是为了保存一座城市，而是保存看向它时的那层玻璃。", body: "下雨的时候，城市会主动放弃一部分清晰。\n\n灯牌、出租车和行人的轮廓混在玻璃上，像尚未冲洗完成的底片。我喜欢这种不确定：它允许记忆晚一点再决定，什么应该留下。", visibility: "public", status: "published", publishedAt: "2026-10-09" },
-    { id: "essay-private-draft", slug: "unpublished-note", title: "一封尚未寄出的短笺", excerpt: "这篇文字只留给自己。", body: "这里是一篇私藏随笔的示例。它不会出现在公开页面中，只有你登录工作室后才能阅读和修改。", visibility: "private", status: "published", publishedAt: "2026-10-09" },
+    { id: "essay-rain-window", slug: "rain-on-the-window", title: "雨停在车窗上", excerpt: "有时拍照并不是为了保存一座城市，而是保存看向它时的那层玻璃。", body: "下雨的时候，城市会主动放弃一部分清晰。\n\n灯牌、出租车和行人的轮廓混在玻璃上，像尚未冲洗完成的底片。我喜欢这种不确定：它允许记忆晚一点再决定，什么应该留下。", access: "public", publishedAt: "2026-10-09" },
+    { id: "essay-private-draft", slug: "unpublished-note", title: "一封尚未寄出的短笺", excerpt: "这篇文字只留给自己。", body: "这里是一篇私藏随笔的示例。它不会出现在公开页面中，只有你登录工作室后才能阅读和修改。", access: "private", publishedAt: "2026-10-09" },
   ],
   favorites: [
-    { id: "favorite-01", title: "雨天的长镜头", category: "影像", note: "让画面多停留几秒，常常比解释更多。", imageUrl: "/photos/03-night-bridge.webp", url: "", sortOrder: 1, published: true },
-    { id: "favorite-02", title: "在途中写下短句", category: "习惯", note: "只记下当时看见的颜色、声音和天气。", imageUrl: "/photos/05-river-boat.webp", url: "", sortOrder: 2, published: true },
+    { id: "favorite-01", title: "雨天的长镜头", category: "影像", note: "让画面多停留几秒，常常比解释更多。", imageUrl: "/photos/03-night-bridge.webp", url: "", access: "public", sortOrder: 1 },
+    { id: "favorite-02", title: "在途中写下短句", category: "习惯", note: "只记下当时看见的颜色、声音和天气。", imageUrl: "/photos/05-river-boat.webp", url: "", access: "public", sortOrder: 2 },
   ],
 };
