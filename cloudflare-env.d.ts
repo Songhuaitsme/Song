@@ -3,7 +3,7 @@ declare namespace Cloudflare {
     DB?: D1Database;
     BUCKET?: R2Bucket;
     ADMIN_USERNAME?: string;
-    ADMIN_PASSWORD_HASH?: string;
+    ADMIN_PASSWORD?: string;
     SESSION_SECRET?: string;
   }
 }

@@ -27,29 +27,23 @@ function adminConfig() {
   try {
     return {
       username: (env.ADMIN_USERNAME ?? "").trim().toLowerCase(),
-      passwordHash: env.ADMIN_PASSWORD_HASH ?? "",
+      password: env.ADMIN_PASSWORD ?? "",
       sessionSecret: env.SESSION_SECRET ?? "",
     };
   } catch {
-    return { username: "", passwordHash: "", sessionSecret: "" };
+    return { username: "", password: "", sessionSecret: "" };
   }
 }
 
 export function isAdminConfigured() {
   const config = adminConfig();
-  return Boolean(config.username && config.passwordHash && config.sessionSecret.length >= 32);
+  return Boolean(config.username && config.password && config.sessionSecret.length >= 32);
 }
 
 function encodeBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function decodeBase64Url(value: string): Uint8Array {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
-  const binary = atob(normalized);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
 function randomToken(bytes = 32): string {
@@ -76,25 +70,14 @@ function constantTimeEqual(left: Uint8Array, right: Uint8Array): boolean {
   return difference === 0;
 }
 
-async function verifyPassword(password: string, encoded: string): Promise<boolean> {
-  const [scheme, iterationsValue, saltValue, expectedValue] = encoded.split("$");
-  const iterations = Number(iterationsValue);
-  if (scheme !== "pbkdf2-sha256" || !Number.isInteger(iterations) || iterations < 100_000 || !saltValue || !expectedValue) return false;
-  try {
-    const salt = decodeBase64Url(saltValue);
-    const expected = decodeBase64Url(expectedValue);
-    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-    const saltBuffer = salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength) as ArrayBuffer;
-    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBuffer, iterations }, key, expected.length * 8);
-    return constantTimeEqual(new Uint8Array(bits), expected);
-  } catch {
-    return false;
-  }
+function constantTimeTextEqual(left: string, right: string): boolean {
+  const encoder = new TextEncoder();
+  return constantTimeEqual(encoder.encode(left), encoder.encode(right));
 }
 
 async function credentialFingerprint(): Promise<string> {
   const config = adminConfig();
-  return sha256(`${config.username}\0${config.passwordHash}`);
+  return sha256(`${config.username}\0${config.password}`);
 }
 
 function parseCookie(header: string | null, name: string): string | null {
@@ -187,8 +170,8 @@ export async function authenticateAdmin(request: Request, username: string, pass
   const normalizedUsername = username.trim().toLowerCase();
   if (await isLocked(request, normalizedUsername)) return { ok: false as const, locked: true as const };
   const config = adminConfig();
-  const passwordMatches = await verifyPassword(password, config.passwordHash);
-  const usernameMatches = normalizedUsername === config.username;
+  const passwordMatches = constantTimeTextEqual(password, config.password);
+  const usernameMatches = constantTimeTextEqual(normalizedUsername, config.username);
   if (!passwordMatches || !usernameMatches) {
     await recordFailure(request, normalizedUsername);
     return { ok: false as const };
