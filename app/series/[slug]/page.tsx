@@ -25,5 +25,10 @@ export default async function SeriesDetail({params}:{params:Promise<{slug:string
   const item=(await getSiteContent(viewer.ownerMode)).series.find((series)=>series.slug===slug);
   if(!item)notFound();
   const returnTo=contentPath("series", slug);
-  return <main><SiteHeader viewer={viewer} returnTo={returnTo}/><header className="story-header"><p className="eyebrow">PHOTOGRAPHIC SERIES</p>{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><p>{item.description}</p><span>{item.photos.length} PHOTOGRAPHS</span>{viewer.ownerMode&&<a className="owner-edit-link" href={`/studio?tab=series#${item.id}`}>编辑此系列</a>}</header><PhotoStory photos={item.photos}/><div className="story-end"><span>END / {item.title}</span><a href="/series">返回系列目录</a></div></main>;
+  const coverAlt=item.photos.find((photo)=>photo.imageUrl===item.coverUrl)?.alt||item.title;
+  return <main><SiteHeader viewer={viewer} returnTo={returnTo}/><header className="story-hero">
+    <img className="story-hero-image" src={item.coverUrl} alt={coverAlt} fetchPriority="high"/>
+    <div className="story-hero-shade"/>
+    <div className="story-hero-copy"><p className="eyebrow">SONFORU / PHOTOGRAPHIC SERIES</p>{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><p>{item.description}</p><div className="story-hero-meta"><span>{String(item.photos.length).padStart(2,"0")} PHOTOGRAPHS</span><span>SONG</span></div>{viewer.ownerMode&&<a className="story-hero-edit" href={`/studio?tab=series#${item.id}`}>编辑此系列</a>}</div>
+  </header><div className="story-lede"><p>摄影系列</p><p>{item.description}</p></div><PhotoStory photos={item.photos}/><div className="story-end"><span>END / {item.title}</span><a href="/series">返回系列目录</a></div></main>;
 }

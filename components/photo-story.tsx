@@ -23,7 +23,7 @@ export function PhotoStory({ photos }: { photos: Photo[] }) {
     touchStart.current = null;
   };
   return <>
-    <div className="photo-story">{photos.map((photo, index) => <figure key={photo.id} className={photo.height > photo.width ? "portrait" : "landscape"}>
+    <div className="photo-story">{photos.map((photo, index) => <figure key={photo.id} className={`${photo.height > photo.width ? "portrait" : "landscape"} story-frame-${index % 4}`}>
       <button className="story-image-button" onClick={() => setActive(index)} aria-label={`全屏查看第 ${index + 1} 张照片：${photo.alt}`}><img src={photo.imageUrl} width={photo.width} height={photo.height} alt={photo.alt} loading={index < 2 ? "eager" : "lazy"} /></button>
       <figcaption><span>{String(index + 1).padStart(2,"0")}</span><p>{photo.caption}</p><small>{photo.location}{photo.takenAt ? ` · ${photo.takenAt}` : ""}</small></figcaption>
     </figure>)}</div>

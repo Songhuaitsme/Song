@@ -89,6 +89,26 @@ async function applyRequestedContentUpdates(db: D1Database) {
   ]);
 }
 
+async function applySeriesExpansion(db: D1Database) {
+  const key = "photo_series_expansion_20261010_v1";
+  if (await db.prepare("SELECT value FROM app_meta WHERE key = ?").bind(key).first()) return;
+  const statements: D1PreparedStatement[] = [];
+  for (const item of defaultContent.series) {
+    statements.push(
+      db.prepare("INSERT OR IGNORE INTO series (id,slug,title,description,cover_url,access,published,sort_order) VALUES (?,?,?,?,?,?,?,?)")
+        .bind(item.id,item.slug,item.title,item.description,item.coverUrl,item.access,item.access === "public" ? 1 : 0,item.sortOrder),
+    );
+    for (const photo of item.photos) {
+      statements.push(
+        db.prepare("INSERT OR IGNORE INTO photos (id,series_id,image_url,original_url,width,height,alt,caption,location,taken_at,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+          .bind(photo.id,photo.seriesId,photo.imageUrl,photo.originalUrl,photo.width,photo.height,photo.alt,photo.caption,photo.location,photo.takenAt,photo.sortOrder),
+      );
+    }
+  }
+  statements.push(db.prepare("INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)").bind(key, new Date().toISOString()));
+  await db.batch(statements);
+}
+
 function fallbackContent(includePrivate: boolean): SiteContent {
   const cloned = structuredClone(defaultContent);
   if (includePrivate) return cloned;
@@ -106,6 +126,7 @@ export async function getSiteContent(includePrivate = false): Promise<SiteConten
     await migrateLegacyAccess(db);
     await seed(db);
     await applyRequestedContentUpdates(db);
+    await applySeriesExpansion(db);
     const [seriesResult, photoResult, essayResult, favoriteResult] = await db.batch([
       db.prepare(`SELECT * FROM series ${includePrivate ? "" : "WHERE access = 'public'"} ORDER BY sort_order, title`),
       db.prepare("SELECT * FROM photos ORDER BY series_id, sort_order"),
@@ -129,6 +150,7 @@ export async function upsertEntity(entity: Entity, record: Record<string, unknow
   await migrateLegacyAccess(db);
   await seed(db);
   await applyRequestedContentUpdates(db);
+  await applySeriesExpansion(db);
   const id = String(record.id || crypto.randomUUID());
 
   if (entity === "series") {

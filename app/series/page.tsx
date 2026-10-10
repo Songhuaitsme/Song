@@ -29,13 +29,13 @@ export default async function SeriesPage() {
         <span className="series-feature-count">{String(featured.photos.length).padStart(2, "0")} 张照片</span>
       </section>
       {remaining.length > 0 && <section className="photography-collection" aria-labelledby="photography-collection-title">
-        <div className="photography-collection-heading"><h2 id="photography-collection-title">更多系列</h2><p>不同的地方，同一种观看。</p></div>
+        <div className="photography-collection-heading"><h2 id="photography-collection-title">摄影故事</h2><p>沿着地点、光线与记忆继续观看。</p></div>
         <div className="photography-cards">{remaining.map((item, index) => <article className="photography-card" key={item.id}>
-          <a className="photography-card-image" href={contentPath("series", item.slug)}><img src={item.coverUrl} alt={item.photos.find((photo) => photo.imageUrl === item.coverUrl)?.alt || item.title} loading="lazy"/></a>
+          <a className="photography-card-image" href={contentPath("series", item.slug)} aria-label={`查看摄影系列：${item.title}`}><img src={item.coverUrl} alt={item.photos.find((photo) => photo.imageUrl === item.coverUrl)?.alt || item.title} loading="lazy"/></a>
           <div className="photography-card-copy"><p className="photography-card-meta">SERIES {String(index + 2).padStart(2, "0")}<span>{item.photos.length} 张照片</span></p>
             {viewer.ownerMode && <AccessBadge access={item.access}/>}
             <h3><a href={contentPath("series", item.slug)}>{item.title}</a></h3><p className="photography-card-description">{item.description}</p>
-            <a className="text-link" href={contentPath("series", item.slug)}>探索系列</a>
+            <a className="photography-card-link" href={contentPath("series", item.slug)}>阅读全文 <span aria-hidden="true">↗</span></a>
             {viewer.ownerMode && <a className="owner-edit-link" href={`/studio?tab=series#${item.id}`}>编辑此系列</a>}
           </div>
         </article>)}</div>
