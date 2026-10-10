@@ -107,3 +107,15 @@
 .copy-group summary{cursor:pointer;font-size:1.1rem;color:var(--jade);font-weight:500}.copy-group:not([open]){display:block}.copy-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem;margin-top:1.5rem}.copy-fields label{display:grid;gap:.5rem;font-size:.85rem}.copy-extra{display:grid;gap:1rem;margin-top:1.5rem;border-top:1px solid var(--line);padding-top:1.5rem}.copy-extra h3{font-size:.95rem}.copy-extra-row{display:grid;gap:.75rem;padding:1rem;border:1px solid var(--line)}.extra-page-copy{width:min(1040px,calc(100% - 96px));margin:0 auto;padding:2.5rem 0 3rem;font-family:"Songti SC","STSong",serif;font-size:1.05rem;line-height:2}.extra-page-copy p{max-width:42rem;white-space:pre-line;overflow-wrap:anywhere;margin:0 0 1.25rem}.extra-page-copy p:last-child{margin-bottom:0}.notes-heading h1,.notes-heading .notes-intro,.cover-copy p,.series-feature-description,.photography-collection-heading p{white-space:pre-line}.studio-tabs{flex-wrap:wrap;height:auto}@media(max-width:760px){.copy-fields{grid-template-columns:1fr}.extra-page-copy{width:calc(100% - 40px);font-size:.98rem;padding:1.75rem 0 2rem}}
 
 .copy-field-label{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.copy-field-label button{background:transparent;border:0;border-bottom:1px solid currentColor;color:var(--rust);cursor:pointer;font-size:.75rem;padding:.25rem 0}.copy-field-label button:focus-visible{outline:2px solid var(--jade);outline-offset:3px}
+
+/* A shared reading column keeps mixed photo proportions orderly. */
+.photo-story{width:min(1120px,calc(100% - 96px));margin:clamp(3rem,6vw,6rem) auto 0}
+.photo-story .story-photo{width:100%;margin:0 0 clamp(3.5rem,7vw,6rem)}
+.photo-story .story-image-button{display:flex;align-items:center;justify-content:center;width:100%}
+.photo-story .story-image-button img{display:block;width:auto;height:auto;max-width:100%;max-height:min(72vh,780px);object-fit:contain}
+.photo-story figcaption{grid-template-columns:2.5rem minmax(0,1fr);gap:.35rem 1.25rem;margin-top:1rem;padding-top:1rem;align-items:baseline}
+.photo-story figcaption span{grid-row:1 / 3}
+.photo-story figcaption p{line-height:1.8;white-space:pre-line;overflow-wrap:anywhere}
+.photo-story figcaption small{grid-column:2;line-height:1.7;overflow-wrap:anywhere}
+.photo-story .story-image-button:focus-visible{outline:2px solid var(--jade);outline-offset:5px}
+@media(max-width:760px){.photo-story{width:calc(100% - 40px);margin-top:3rem}.photo-story .story-photo{margin-bottom:3.5rem}.photo-story .story-image-button img{max-height:70svh}.photo-story figcaption{grid-template-columns:1.65rem minmax(0,1fr);gap:.3rem .75rem;margin-top:.85rem;padding-top:.85rem}.photo-story figcaption p{font-size:.98rem}.photo-story figcaption small{font-size:.7rem}}
