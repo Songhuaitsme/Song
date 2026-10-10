@@ -11,6 +11,6 @@ export function SiteHeader({ viewer, returnTo = "/" }: { viewer: ViewerContext; 
         <form action="/api/auth/logout" method="post"><input type="hidden" name="csrf" value={viewer.csrfToken ?? ""}/><input type="hidden" name="returnTo" value="/"/><button type="submit">退出</button></form>
       </div>
     </aside>}
-    <header className="site-header"><a href="/" className="wordmark" aria-label="SONFORU 首页">SONFORU</a><nav aria-label="主要导航">{links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}{!viewer.isAdmin && <a href={`/login?returnTo=${encodeURIComponent(returnTo)}`}>管理</a>}</nav></header>
+    <header className="site-header"><a href="/" className="wordmark" aria-label="SONFORU 首页">SONFORU</a><nav aria-label="主要导航">{links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}{!viewer.isAdmin && <a href={`/login?returnTo=${encodeURIComponent(returnTo)}`}>工作室</a>}</nav></header>
   </>;
 }
