@@ -1,3 +1,4 @@
+import { essayImageUrls } from "@/lib/essay-body";
 import { env } from "cloudflare:workers";
 import {
   defaultContent,
@@ -185,11 +186,15 @@ export async function getAssetAccess(assetUrl: string): Promise<AccessLevel | nu
   const db = getDatabase();
   if (!db) return null;
   await migrateLegacyAccess(db);
-  const [photoResult, favoriteResult] = await db.batch([
+  const [photoResult, favoriteResult, essayResult] = await db.batch([
     db.prepare("SELECT s.access FROM photos p JOIN series s ON s.id = p.series_id WHERE p.image_url = ? OR p.original_url = ?").bind(assetUrl, assetUrl),
     db.prepare("SELECT access FROM favorites WHERE image_url = ?").bind(assetUrl),
+    db.prepare("SELECT access, body FROM essays WHERE instr(body, ?) > 0").bind(assetUrl),
   ]);
   const levels = [...photoResult.results, ...favoriteResult.results].map((row) => access((row as Record<string, unknown>).access));
+  for (const row of essayResult.results as Record<string, unknown>[]) {
+    if (essayImageUrls(String(row.body)).includes(assetUrl)) levels.push(access(row.access));
+  }
   if (levels.includes("public")) return "public";
   if (levels.includes("private")) return "private";
   if (levels.includes("draft")) return "draft";
