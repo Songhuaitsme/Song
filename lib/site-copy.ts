@@ -13,8 +13,9 @@ export type CopyPage = typeof pageGroups[number][0];
 export type CopyRow = { id: string; text: string };
 export const fontOptions = [["song","宋体"],["sans","黑体"],["kai","楷体"],["hei","微软雅黑"]] as const;
 export type FontChoice = typeof fontOptions[number][0];
-export type TypeSettings = { titleFont:FontChoice; bodyFont:FontChoice; titleSize:number; bodySize:number };
-export type SiteCopy = { typography?:Partial<Record<CopyPage,TypeSettings>>; values: Record<CopyKey,string>; extras: Partial<Record<CopyPage,CopyRow[]>> };
+export type TypeSettings = { titleFont:FontChoice; bodyFont:FontChoice; titleSize:number; bodySize:number; titleBold?:boolean; bodyBold?:boolean };
+export type TextFormat = { font:FontChoice|"inherit"; size:number; bold:boolean|null };
+export type SiteCopy = { textFormats?:Record<string,TextFormat>; typography?:Partial<Record<CopyPage,TypeSettings>>; values: Record<CopyKey,string>; extras: Partial<Record<CopyPage,CopyRow[]>> };
 export const defaultSiteCopy: SiteCopy = { values: Object.fromEntries(copyFields.map((field)=>[field[1],field[3]])) as Record<CopyKey,string>, extras: {} };
 export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
   const values = record.values;
@@ -46,7 +47,18 @@ export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
       if(!setting||typeof setting!=="object"||Array.isArray(setting))throw new Error("字体设置格式无效");
       const t=setting as TypeSettings;
       if(!fontOptions.some(([key])=>key===t.titleFont)||!fontOptions.some(([key])=>key===t.bodyFont)||!Number.isInteger(t.titleSize)||!Number.isInteger(t.bodySize)||(t.titleSize!==0&&(t.titleSize<12||t.titleSize>120))||(t.bodySize!==0&&(t.bodySize<10||t.bodySize>40)))throw new Error("字号范围：标题 12–120，正文 10–40；0 为默认字号");
-      result.typography[page]={titleFont:t.titleFont,bodyFont:t.bodyFont,titleSize:t.titleSize,bodySize:t.bodySize};
+      if((t.titleBold!==undefined&&typeof t.titleBold!=="boolean")||(t.bodyBold!==undefined&&typeof t.bodyBold!=="boolean"))throw new Error("加粗设置无效");
+      result.typography[page]={...(t.titleBold!==undefined?{titleBold:t.titleBold}:{}),...(t.bodyBold!==undefined?{bodyBold:t.bodyBold}:{}),titleFont:t.titleFont,bodyFont:t.bodyFont,titleSize:t.titleSize,bodySize:t.bodySize};
+    }
+  }
+  if(record.textFormats!==undefined){
+    if(!record.textFormats||typeof record.textFormats!=="object"||Array.isArray(record.textFormats))throw new Error("文字格式无效");
+    const entries=Object.entries(record.textFormats);if(entries.length>5000)throw new Error("文字格式设置过多");result.textFormats={};
+    for(const [key,value] of entries){
+      if(!key||key.length>400||!/^[-a-zA-Z0-9:|._]+$/.test(key)||!value||typeof value!=="object"||Array.isArray(value))throw new Error("文字格式无效");
+      const t=value as TextFormat;
+      if(!(t.font==="inherit"||fontOptions.some(([font])=>font===t.font))||!Number.isInteger(t.size)||(t.size!==0&&(t.size<10||t.size>120))||(t.bold!==null&&typeof t.bold!=="boolean"))throw new Error("文字格式无效：字号为 10–120，0 为默认");
+      result.textFormats[key]={font:t.font,size:t.size,bold:t.bold};
     }
   }
   return result;
