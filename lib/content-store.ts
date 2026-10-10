@@ -1,6 +1,8 @@
 import { env } from "cloudflare:workers";
 import {
   defaultContent,
+  defaultAbout,
+  type AboutContent,
   type AccessLevel,
   type Essay,
   type Favorite,
@@ -113,6 +115,7 @@ function fallbackContent(includePrivate: boolean): SiteContent {
   const cloned = structuredClone(defaultContent);
   if (includePrivate) return cloned;
   return {
+    about: cloned.about,
     series: cloned.series.filter((item) => item.access === "public"),
     essays: cloned.essays.filter((item) => item.access === "public"),
     favorites: cloned.favorites.filter((item) => item.access === "public"),
@@ -137,7 +140,7 @@ export async function getSiteContent(includePrivate = false): Promise<SiteConten
     const series = (seriesResult.results as Record<string, unknown>[]).map((r): Series => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), description:String(r.description), coverUrl:String(r.cover_url), access:access(r.access), sortOrder:Number(r.sort_order), photos:photos.filter((p)=>p.seriesId===String(r.id)) }));
     const essays = (essayResult.results as Record<string, unknown>[]).map((r): Essay => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), excerpt:String(r.excerpt), body:String(r.body), access:access(r.access), publishedAt:String(r.published_at), sortOrder:Number(r.sort_order) }));
     const favorites = (favoriteResult.results as Record<string, unknown>[]).map((r): Favorite => ({ id:String(r.id), title:String(r.title), category:String(r.category), note:String(r.note), imageUrl:String(r.image_url), url:String(r.url), access:access(r.access), sortOrder:Number(r.sort_order) }));
-    return { series, essays, favorites };
+    return { series, essays, favorites, about: await getAboutContent() };
   } catch (error) {
     console.error("Content database unavailable", error);
     return fallbackContent(includePrivate);
@@ -191,4 +194,28 @@ export async function getAssetAccess(assetUrl: string): Promise<AccessLevel | nu
   if (levels.includes("private")) return "private";
   if (levels.includes("draft")) return "draft";
   return null;
+}
+
+export function validateAboutContent(record: Record<string, unknown>): AboutContent {
+  return { title: text(record.title, "标题", 200), body: text(record.body, "介绍正文", 10000), note: text(record.note, "补充说明", 2000) };
+}
+
+export async function getAboutContent(): Promise<AboutContent> {
+  const db = getDatabase();
+  if (!db) return { ...defaultAbout };
+  try {
+    const row = await db.prepare("SELECT value FROM app_meta WHERE key = ?").bind("about_content_v1").first<{ value: string }>();
+    return row ? validateAboutContent(JSON.parse(row.value)) : { ...defaultAbout };
+  } catch (error) {
+    console.error("About content unavailable", error);
+    return { ...defaultAbout };
+  }
+}
+
+export async function saveAboutContent(record: Record<string, unknown>) {
+  const content = validateAboutContent(record);
+  const db = getDatabase();
+  if (!db) throw new Error("数据库暂时不可用");
+  await db.prepare("INSERT INTO app_meta (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind("about_content_v1", JSON.stringify(content)).run();
+  return content;
 }

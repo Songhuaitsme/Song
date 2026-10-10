@@ -75,3 +75,5 @@
 .about-index .about-page>div p:first-child{font-size:1.15rem}
 .about-index .about-page .about-note{margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--line);font-family:"Inter","Noto Sans SC","Microsoft YaHei",sans-serif;font-size:.82rem;line-height:1.8}
 @media(max-width:760px){.about-index .about-page{width:calc(100% - 40px);padding:3rem 0 4rem}.about-index .about-page h1{font-size:clamp(2rem,7.6vw,3.75rem);margin-bottom:2rem;line-height:1.4}.about-index .about-page>div{font-size:.98rem;padding-top:1.5rem}.about-index .about-page>div p:first-child{font-size:1.05rem}.about-index .about-page .about-note{font-size:.78rem;margin-top:1.5rem}}
+
+.about-index .about-paragraph,.about-index .about-note{white-space:pre-line;overflow-wrap:anywhere}.about-index .about-page h1 span{overflow-wrap:anywhere}.about-index .about-page .owner-edit-link{margin-left:0}.about-editor{max-width:860px}.about-editor label{font-size:.9rem;font-weight:500}.about-editor .privacy-note{margin-top:-.5rem}
