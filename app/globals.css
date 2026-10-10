@@ -52,3 +52,15 @@
 .notes-page .essay-list p{margin:0;max-width:42rem;font-size:.95rem;line-height:1.9}
 .notes-page .owner-edit-link{display:inline-block;margin-top:1rem}
 @media(max-width:760px){.notes-heading,.notes-page .essay-list,.notes-page .list-empty{width:calc(100% - 40px)}.notes-heading{padding:3rem 0 2.5rem}.notes-heading h1{font-size:clamp(2.5rem,9vw,3.75rem)}.notes-heading .notes-intro{font-size:.88rem;margin-top:1rem}.notes-page .essay-list{margin-bottom:4rem}.notes-page .essay-list>article{grid-template-columns:1.65rem minmax(0,1fr);gap:.75rem;padding:1.75rem 0 2rem}.notes-page .essay-list h2{font-size:clamp(1.45rem,5.5vw,2rem);margin:.55rem 0 .65rem}.notes-page .essay-list p{font-size:.88rem}}
+
+/* Collection: aligned shelves with uncropped images. */
+.collection-page .favorites-grid,.collection-page .list-empty{width:min(1040px,calc(100% - 96px));margin-left:auto;margin-right:auto}
+.collection-page .favorites-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:3.5rem 2.5rem;margin-bottom:6rem;align-items:start}
+.collection-page .favorites-grid article:nth-child(even){margin-top:0}
+.collection-page .favorite-image{aspect-ratio:4/3;background:#eeece6;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.collection-page .favorites-grid img{display:block;width:100%;height:100%;object-fit:contain}
+.collection-page .favorites-grid article>div:not(.favorite-image){margin-top:1.25rem;padding:1.15rem 0 0;border-top:1px solid var(--line)}
+.collection-page .favorites-grid h2{font-size:clamp(1.45rem,2.2vw,1.9rem);line-height:1.5;margin:.55rem 0 .65rem;overflow-wrap:anywhere}
+.collection-page .favorites-grid p{font-size:.95rem;line-height:1.9;margin:0 0 1rem;overflow-wrap:anywhere}
+.collection-page .favorites-grid a:focus-visible{outline:2px solid var(--jade);outline-offset:5px}
+@media(max-width:760px){.collection-page .favorites-grid,.collection-page .list-empty{width:calc(100% - 40px)}.collection-page .favorites-grid{grid-template-columns:1fr;gap:2.75rem;margin-bottom:4rem}.collection-page .favorites-grid article>div:not(.favorite-image){margin-top:1rem;padding-top:1rem}.collection-page .favorites-grid p{font-size:.88rem}.collection-page .favorites-grid h2{font-size:1.55rem}}
