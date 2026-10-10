@@ -11,11 +11,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const returnTo = safeReturnTo(query.returnTo);
   if (await getAdminSession()) redirect(returnTo);
   return <main className="login-page">
-    <a href="/" className="login-wordmark">SONG</a>
+    <a href="/" className="login-wordmark">SONFORU</a>
     <section className="login-panel">
-      <p className="eyebrow">OWNER / 管理员</p>
-      <h1>回到工作室</h1>
-      <p>登录后可以查看私藏与草稿，并管理摄影、随笔和收藏。</p>
+      <p className="eyebrow">OWNER / SONFORU</p>
+      <p>登录查看私藏与草稿，并管理摄影、随笔和收藏</p>
       <LoginForm returnTo={returnTo}/>
     </section>
   </main>;
