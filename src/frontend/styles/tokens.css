@@ -1,0 +1,20 @@
+:root {
+  --paper: #f5f3ee;
+  --ink: #151817;
+  --quiet: #656d69;
+  --line: #cfd2ca;
+  --jade: #244b49;
+  --rust: #a14d2b;
+  --content-wide: 1480px;
+  --content-reading: 760px;
+  --page-gutter: 64px;
+  --image-gap: clamp(5rem, 10vw, 10rem);
+  --motion-page: 800ms;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --page-gutter: 32px;
+    --image-gap: 5rem;
+  }
+}

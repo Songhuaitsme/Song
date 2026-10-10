@@ -45,3 +45,8 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+/var/
+/media-source/
+/legacy/
+/.env.local
+*.tsbuildinfo

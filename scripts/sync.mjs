@@ -1,0 +1,20 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { loadLocalEnv, required, endpoint, syncRequest } from "./lib/env.mjs";
+
+const env=await loadLocalEnv(),secret=required(env,"SYNC_SECRET"),local=endpoint(env),remote=endpoint(env,"production"),statePath=resolve("var","sync-state.json");
+const [localExport,remoteExport]=await Promise.all([syncRequest(local,"/api/sync/export?since=0",secret).then(r=>r.json()),syncRequest(remote,"/api/sync/export?since=0",secret).then(r=>r.json())]);
+if(localExport.schemaVersion!==remoteExport.schemaVersion)throw new Error("本地与线上数据库结构版本不一致，已停止同步");
+await mkdir(resolve("var","backups"),{recursive:true});const stamp=new Date().toISOString().replaceAll(":","-");await Promise.all([writeFile(resolve("var","backups",`${stamp}-pre-sync-local.json`),JSON.stringify(localExport,null,2)),writeFile(resolve("var","backups",`${stamp}-pre-sync-production.json`),JSON.stringify(remoteExport,null,2))]);
+let state={hashes:{}};try{state=JSON.parse(await readFile(statePath,"utf8"));}catch{}
+const normalize=row=>{const copy={...row};delete copy.version;delete copy.updated_at;return copy;};const hash=row=>createHash("sha256").update(JSON.stringify(normalize(row))).digest("hex");
+const flatten=data=>{const map=new Map();for(const[entity,rows]of Object.entries(data.records))for(const row of rows)map.set(`${entity}:${row.id??row.key}`,{entity,row});return map;};
+const left=flatten(localExport),right=flatten(remoteExport),keys=new Set([...left.keys(),...right.keys()]),toLocal=[],toRemote=[],conflicts=[];
+for(const key of keys){const l=left.get(key),r=right.get(key),baseline=state.hashes[key],lh=l&&hash(l.row),rh=r&&hash(r.row),localChanged=lh!==baseline,remoteChanged=rh!==baseline;if(lh===rh)continue;if(localChanged&&remoteChanged){conflicts.push(key);if(l&&r)toLocal.push({entity:r.entity,data:{...r.row,version:Number(l.row.version)+1,updated_at:Date.now()},baseVersion:Number(l.row.version)-1});continue;}if(localChanged&&l){toRemote.push({entity:l.entity,data:{...l.row,version:Number(r?.row.version??0)+1,updated_at:Date.now()},baseVersion:Number(r?.row.version??0)});}else if(remoteChanged&&r){toLocal.push({entity:r.entity,data:{...r.row,version:Number(l?.row.version??0)+1,updated_at:Date.now()},baseVersion:Number(l?.row.version??0)});}}
+async function apply(base,changes){if(!changes.length)return{applied:[],conflicts:[]};return(await syncRequest(base,"/api/sync/import",secret,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({schemaVersion:localExport.schemaVersion,changes})})).json();}
+const [localResult,remoteResult]=await Promise.all([apply(local,toLocal),apply(remote,toRemote)]);
+async function copyAssets(from,to,changes){for(const change of changes.filter(c=>c.entity==="media_assets"&&!c.data.deleted_at)){for(const key of [change.data.original_key,change.data.display_key]){if(!key)continue;const response=await syncRequest(from,`/api/sync/assets/${key}`,secret);await syncRequest(to,`/api/sync/assets/${key}`,secret,{method:"PUT",headers:{"content-type":response.headers.get("content-type")??"application/octet-stream"},body:await response.arrayBuffer()});}}}
+await copyAssets(local,remote,toRemote);await copyAssets(remote,local,toLocal);
+const [finalLocal,finalRemote]=await Promise.all([syncRequest(local,"/api/sync/export?since=0",secret).then(r=>r.json()),syncRequest(remote,"/api/sync/export?since=0",secret).then(r=>r.json())]),finalLeft=flatten(finalLocal),finalRight=flatten(finalRemote),hashes={};for(const key of new Set([...finalLeft.keys(),...finalRight.keys()])){const a=finalLeft.get(key),b=finalRight.get(key);if(a&&b&&hash(a.row)===hash(b.row))hashes[key]=hash(a.row);}
+await writeFile(statePath,JSON.stringify({syncedAt:new Date().toISOString(),hashes},null,2));console.log(JSON.stringify({pushed:remoteResult.applied.length,pulled:localResult.applied.length,conflicts:[...conflicts,...localResult.conflicts,...remoteResult.conflicts]},null,2));

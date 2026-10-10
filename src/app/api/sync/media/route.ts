@@ -1,0 +1,3 @@
+import { authorizeSync } from "@/backend/sync/sync-service";
+import { storeMedia } from "@/storage/media-store";
+export async function POST(request:Request){if(!authorizeSync(request))return new Response("Not found",{status:404});try{const form=await request.formData(),original=form.get("original"),display=form.get("display");if(!(original instanceof File)||!(display instanceof File))throw new Error("图片数据无效");return Response.json(await storeMedia({original,display,width:Number(form.get("width")||0),height:Number(form.get("height")||0),access:"private",assignment:"unassigned"}));}catch(error){return Response.json({error:error instanceof Error?error.message:"导入失败"},{status:400});}}

@@ -1,0 +1,5 @@
+import { authorizeSync } from "@/backend/sync/sync-service";
+import { getMediaObject, putSyncedObject, validObjectKey } from "@/storage/media-store";
+type Context={params:Promise<{key:string[]}>};
+export async function GET(request:Request,{params}:Context){if(!authorizeSync(request))return new Response("Not found",{status:404});const key=(await params).key.join("/");if(!validObjectKey(key))return new Response("Not found",{status:404});const object=await getMediaObject(key);if(!object)return new Response("Not found",{status:404});const headers=new Headers();object.writeHttpMetadata(headers);headers.set("cache-control","private, no-store");return new Response(object.body,{headers});}
+export async function PUT(request:Request,{params}:Context){if(!authorizeSync(request))return new Response("Not found",{status:404});const key=(await params).key.join("/");if(!validObjectKey(key))return new Response("Not found",{status:404});await putSyncedObject(key,await request.arrayBuffer(),request.headers.get("content-type")??"application/octet-stream");return Response.json({ok:true});}

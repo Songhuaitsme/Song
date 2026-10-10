@@ -1,0 +1,4 @@
+import { getAdminSession, validateCsrf } from "@/backend/auth/admin-auth";
+import { listConflicts, resolveConflict } from "@/backend/sync/sync-service";
+export async function GET(request:Request){if(!await getAdminSession(request))return Response.json({error:"无权访问"},{status:403});return Response.json({conflicts:await listConflicts()},{headers:{"cache-control":"no-store"}});}
+export async function PUT(request:Request){const session=await getAdminSession(request);if(!session||!validateCsrf(request,session))return Response.json({error:"无权访问"},{status:403});try{const body=await request.json()as{id?:string;resolution?:"local"|"remote"|"manual";manual?:Record<string,unknown>};if(!body.id||!body.resolution)throw new Error("解决方式无效");await resolveConflict(body.id,body.resolution,body.manual);return Response.json({ok:true});}catch(error){return Response.json({error:error instanceof Error?error.message:"处理失败"},{status:400});}}

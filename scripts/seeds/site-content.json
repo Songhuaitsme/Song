@@ -1,0 +1,735 @@
+{
+  "exportedAt": "2026-10-10T14:22:47.158Z",
+  "projectId": "appgprj_6ac8958fb3ec8191bd9a72d10f72503a",
+  "binding": "DB",
+  "tables": {
+    "series": {
+      "columns": [
+        "id",
+        "slug",
+        "title",
+        "description",
+        "cover_url",
+        "published",
+        "sort_order",
+        "access"
+      ],
+      "rows": [
+        {
+          "id": "dd0edb7a-1e6a-4c1f-99c1-3f8f28f5c3b5",
+          "slug": "关于人的一些",
+          "title": "关于人的一些",
+          "description": "",
+          "cover_url": "",
+          "published": 0,
+          "sort_order": 7,
+          "access": "draft"
+        },
+        {
+          "id": "series-between-mist-and-city",
+          "slug": "between-mist-and-city",
+          "title": "在雾与城之间",
+          "description": "沿着雨、桥与穿城而过的轨道，收集城市暂时失焦的时刻。",
+          "cover_url": "/photos/01-fog-clock.webp",
+          "published": 1,
+          "sort_order": 1,
+          "access": "public"
+        },
+        {
+          "id": "series-coast-afterglow",
+          "slug": "coast-afterglow",
+          "title": "海风经过以后",
+          "description": "从粉蓝色的傍晚走向橙红的潮线，记录海岸在一天将尽时逐渐安静下来的过程。",
+          "cover_url": "/photos/coast-04.webp",
+          "published": 1,
+          "sort_order": 3,
+          "access": "public"
+        },
+        {
+          "id": "series-companions",
+          "slug": "companions",
+          "title": "同行者",
+          "description": "从鱼灯夜游到海边日落、山中步道，镜头回到一起出发的人，也回到旅途中那些没有排练的瞬间。",
+          "cover_url": "/photos/companions-03.webp",
+          "published": 1,
+          "sort_order": 6,
+          "access": "public"
+        },
+        {
+          "id": "series-fish-lantern-night",
+          "slug": "fish-lantern-night",
+          "title": "鱼灯照夜",
+          "description": "鱼灯从白墙黛瓦与荷塘之间游过。人群、火光和水中倒影共同组成一场只在夜里发生的迁徙。",
+          "cover_url": "/photos/fish-lantern-02.webp",
+          "published": 1,
+          "sort_order": 1,
+          "access": "public"
+        },
+        {
+          "id": "series-mountain-water",
+          "slug": "following-water-into-the-mountains",
+          "title": "循水入山",
+          "description": "从瀑布与清潭出发，沿松枝、索道和云层向上，观看水与山如何交换彼此的形状。",
+          "cover_url": "/photos/mountain-water-03.webp",
+          "published": 1,
+          "sort_order": 4,
+          "access": "public"
+        },
+        {
+          "id": "series-white-walls-distant-hills",
+          "slug": "white-walls-distant-hills",
+          "title": "白墙与远山",
+          "description": "河道、稻田、薄雾和白色屋舍连成一条缓慢的路，村落在群山之间保留着安静的尺度。",
+          "cover_url": "/api/assets/uploads/display/c64e1d99-dc0b-434b-9f34-37e8a33e5487.webp",
+          "published": 1,
+          "sort_order": 5,
+          "access": "public"
+        }
+      ]
+    },
+    "photos": {
+      "columns": [
+        "id",
+        "series_id",
+        "image_url",
+        "original_url",
+        "width",
+        "height",
+        "alt",
+        "caption",
+        "location",
+        "taken_at",
+        "sort_order"
+      ],
+      "rows": [
+        {
+          "id": "0ba90d82-4073-4cab-ac0f-6da9e63075c8",
+          "series_id": "series-white-walls-distant-hills",
+          "image_url": "/api/assets/uploads/display/c64e1d99-dc0b-434b-9f34-37e8a33e5487.webp",
+          "original_url": "/api/assets/uploads/originals/c64e1d99-dc0b-434b-9f34-37e8a33e5487.jpg",
+          "width": 2200,
+          "height": 1238,
+          "alt": "清晨的水墨画",
+          "caption": "雾压低了山的声音，只留下屋舍和倒影彼此回应。",
+          "location": "宏村河畔",
+          "taken_at": "",
+          "sort_order": 5
+        },
+        {
+          "id": "photo-01",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/01-fog-clock.webp",
+          "original_url": "/photos/01-fog-clock.webp",
+          "width": 1467,
+          "height": 2200,
+          "alt": "雾气中的城市钟楼与高层建筑",
+          "caption": "雾把远处的楼擦去，只留下钟楼确认时间仍在经过。",
+          "location": "城市途中",
+          "taken_at": "",
+          "sort_order": 1
+        },
+        {
+          "id": "photo-02",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/02-rain-taxi.webp",
+          "original_url": "/photos/02-rain-taxi.webp",
+          "width": 2200,
+          "height": 1466,
+          "alt": "雨夜车窗外的黄色出租车与街边灯牌",
+          "caption": "雨水停在玻璃上，街道从现实退成了一层颜色。",
+          "location": "雨夜",
+          "taken_at": "",
+          "sort_order": 2
+        },
+        {
+          "id": "photo-03",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/03-night-bridge.webp",
+          "original_url": "/photos/03-night-bridge.webp",
+          "width": 1467,
+          "height": 2200,
+          "alt": "夜色中的桥梁、灯光与湿润路面",
+          "caption": "桥的另一侧被强光折叠，夜色则保持沉默。",
+          "location": "桥上",
+          "taken_at": "",
+          "sort_order": 3
+        },
+        {
+          "id": "photo-04",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/04-city-fragments.webp",
+          "original_url": "/photos/04-city-fragments.webp",
+          "width": 1467,
+          "height": 2200,
+          "alt": "城市建筑与道路交错形成的片段",
+          "caption": "高架、楼宇和光线，把城市切成短暂的几何。",
+          "location": "城中",
+          "taken_at": "",
+          "sort_order": 4
+        },
+        {
+          "id": "photo-05",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/05-river-boat.webp",
+          "original_url": "/photos/05-river-boat.webp",
+          "width": 1505,
+          "height": 2200,
+          "alt": "高架桥柱之间驶过江面的游船",
+          "caption": "船从庞大的桥柱之间经过，像一句被结构包围的小声旁白。",
+          "location": "江面",
+          "taken_at": "",
+          "sort_order": 5
+        },
+        {
+          "id": "photo-06",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/06-train-through-city.webp",
+          "original_url": "/photos/06-train-through-city.webp",
+          "width": 1468,
+          "height": 2200,
+          "alt": "列车穿过旧楼之间，远处可见现代高楼",
+          "caption": "列车从旧楼的缝隙里穿过，新城在更远处浮现。",
+          "location": "街巷",
+          "taken_at": "",
+          "sort_order": 6
+        },
+        {
+          "id": "photo-07",
+          "series_id": "series-between-mist-and-city",
+          "image_url": "/photos/07-jiangnan-bridge.webp",
+          "original_url": "/photos/07-jiangnan-bridge.webp",
+          "width": 1088,
+          "height": 1445,
+          "alt": "烟雨山色前的江南石桥及水中倒影",
+          "caption": "山雾、屋瓦与桥的倒影，让旅程在水面慢下来。",
+          "location": "江南",
+          "taken_at": "",
+          "sort_order": 7
+        },
+        {
+          "id": "series-coast-afterglow-photo-01",
+          "series_id": "series-coast-afterglow",
+          "image_url": "/photos/coast-01.webp",
+          "original_url": "/photos/coast-01.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "粉蓝暮色下的沙滩、海面与远处索道",
+          "caption": "傍晚把喧闹留在岸上，把颜色交给海面。",
+          "location": "海岸",
+          "taken_at": "2026-10-07",
+          "sort_order": 1
+        },
+        {
+          "id": "series-coast-afterglow-photo-02",
+          "series_id": "series-coast-afterglow",
+          "image_url": "/photos/coast-02.webp",
+          "original_url": "/photos/coast-02.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "海湾、灯塔与远处港口的蓝色片段",
+          "caption": "灯塔站在海风里，替远处的船保留一个坐标。",
+          "location": "海湾",
+          "taken_at": "2026-10-07",
+          "sort_order": 2
+        },
+        {
+          "id": "series-coast-afterglow-photo-03",
+          "series_id": "series-coast-afterglow",
+          "image_url": "/photos/coast-03.webp",
+          "original_url": "/photos/coast-03.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "浅滩上的海鸟与层叠潮线",
+          "caption": "潮水退后，海鸟接管了沙洲的边界。",
+          "location": "浅滩",
+          "taken_at": "2026-10-07",
+          "sort_order": 3
+        },
+        {
+          "id": "series-coast-afterglow-photo-04",
+          "series_id": "series-coast-afterglow",
+          "image_url": "/photos/coast-04.webp",
+          "original_url": "/photos/coast-04.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "橙色落日映照潮汐与沙岸",
+          "caption": "最后一束暖光贴着海平线，也贴着回程的脚步。",
+          "location": "暮色海岸",
+          "taken_at": "2026-10-07",
+          "sort_order": 4
+        },
+        {
+          "id": "series-coast-afterglow-photo-05",
+          "series_id": "series-coast-afterglow",
+          "image_url": "/photos/coast-05.webp",
+          "original_url": "/photos/coast-05.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "伸向海面的栈道与晚归人群",
+          "caption": "栈道把陆地延长了一小段，人们在那里等待天色变暗。",
+          "location": "海边栈道",
+          "taken_at": "2026-10-07",
+          "sort_order": 5
+        },
+        {
+          "id": "series-coast-afterglow-photo-06",
+          "series_id": "series-coast-afterglow",
+          "image_url": "/photos/coast-06.webp",
+          "original_url": "/photos/coast-06.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "从海边道路到城市轮廓的黄昏片段",
+          "caption": "离开海岸之后，夕光仍在道路和楼影之间同行。",
+          "location": "沿海途中",
+          "taken_at": "2026-10-07",
+          "sort_order": 6
+        },
+        {
+          "id": "series-companions-photo-01",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-01.webp",
+          "original_url": "/photos/companions-01.webp",
+          "width": 2200,
+          "height": 1650,
+          "alt": "鱼灯下合影的两位同行者",
+          "caption": "热闹的灯会里，镜头先记住了举灯的人。",
+          "location": "旅途中",
+          "taken_at": "2026-09-24",
+          "sort_order": 1
+        },
+        {
+          "id": "series-companions-photo-02",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-02.webp",
+          "original_url": "/photos/companions-02.webp",
+          "width": 1650,
+          "height": 2200,
+          "alt": "海边被轻轻抚摸的柴犬",
+          "caption": "风从海面过来，它比我们更早听见。",
+          "location": "海边",
+          "taken_at": "2026-10-06",
+          "sort_order": 2
+        },
+        {
+          "id": "series-companions-photo-03",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-03.webp",
+          "original_url": "/photos/companions-03.webp",
+          "width": 1464,
+          "height": 2200,
+          "alt": "落日海面前的人物剪影",
+          "caption": "落日把人收成剪影，也把一个瞬间留得更久。",
+          "location": "海岸",
+          "taken_at": "2026-10-06",
+          "sort_order": 3
+        },
+        {
+          "id": "series-companions-photo-04",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-04.webp",
+          "original_url": "/photos/companions-04.webp",
+          "width": 2200,
+          "height": 1466,
+          "alt": "暮色海滩上独自行走的人",
+          "caption": "潮线之外，她沿着余光慢慢走远。",
+          "location": "暮色海岸",
+          "taken_at": "2026-10-06",
+          "sort_order": 4
+        },
+        {
+          "id": "series-companions-photo-05",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-05.webp",
+          "original_url": "/photos/companions-05.webp",
+          "width": 1465,
+          "height": 2200,
+          "alt": "海边举起相机拍摄的同行者",
+          "caption": "有人看海，有人把看海的人留在画面里。",
+          "location": "海边",
+          "taken_at": "2026-10-06",
+          "sort_order": 5
+        },
+        {
+          "id": "series-companions-photo-06",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-06.webp",
+          "original_url": "/photos/companions-06.webp",
+          "width": 1651,
+          "height": 2200,
+          "alt": "面向粉色海面的拍摄者",
+          "caption": "同一片晚霞，在不同镜头里拥有不同的停留方式。",
+          "location": "海岸",
+          "taken_at": "2026-10-07",
+          "sort_order": 6
+        },
+        {
+          "id": "series-companions-photo-07",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-07.webp",
+          "original_url": "/photos/companions-07.webp",
+          "width": 1467,
+          "height": 2200,
+          "alt": "山峰前举起双杖的旅行者",
+          "caption": "抵达高处之后，身体替喜悦做了一个感叹号。",
+          "location": "山中",
+          "taken_at": "2026-10-07",
+          "sort_order": 7
+        },
+        {
+          "id": "series-companions-photo-08",
+          "series_id": "series-companions",
+          "image_url": "/photos/companions-08.webp",
+          "original_url": "/photos/companions-08.webp",
+          "width": 2200,
+          "height": 1466,
+          "alt": "林间手持双杖微笑的人",
+          "caption": "旅程也有轻松的一面，藏在停下来回望的几秒里。",
+          "location": "林间步道",
+          "taken_at": "2026-10-07",
+          "sort_order": 8
+        },
+        {
+          "id": "series-fish-lantern-night-photo-01",
+          "series_id": "series-fish-lantern-night",
+          "image_url": "/photos/fish-lantern-01.webp",
+          "original_url": "/photos/fish-lantern-01.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "夜色中鱼灯游过荷塘与白墙村落",
+          "caption": "灯火先在水面醒来，鱼群随后游进夜色。",
+          "location": "古村夜游",
+          "taken_at": "2026-10-07",
+          "sort_order": 1
+        },
+        {
+          "id": "series-fish-lantern-night-photo-02",
+          "series_id": "series-fish-lantern-night",
+          "image_url": "/photos/fish-lantern-02.webp",
+          "original_url": "/photos/fish-lantern-02.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "人群举着鱼灯穿过古村街巷",
+          "caption": "一尾尾亮起的鱼，把街巷变成缓慢流动的河。",
+          "location": "古村街巷",
+          "taken_at": "2026-10-07",
+          "sort_order": 2
+        },
+        {
+          "id": "series-fish-lantern-night-photo-03",
+          "series_id": "series-fish-lantern-night",
+          "image_url": "/photos/fish-lantern-03.webp",
+          "original_url": "/photos/fish-lantern-03.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "鱼灯、桥与白墙在夜色中相映",
+          "caption": "桥是一道停顿，灯影从它的两侧继续讲述。",
+          "location": "荷塘边",
+          "taken_at": "2026-10-07",
+          "sort_order": 3
+        },
+        {
+          "id": "series-fish-lantern-night-photo-04",
+          "series_id": "series-fish-lantern-night",
+          "image_url": "/photos/fish-lantern-04.webp",
+          "original_url": "/photos/fish-lantern-04.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "鱼灯表演与烟火的夜间片段",
+          "caption": "火光腾起时，鱼灯仍沿着人的脚步向前。",
+          "location": "鱼灯会",
+          "taken_at": "2026-10-07",
+          "sort_order": 4
+        },
+        {
+          "id": "series-fish-lantern-night-photo-05",
+          "series_id": "series-fish-lantern-night",
+          "image_url": "/photos/fish-lantern-05.webp",
+          "original_url": "/photos/fish-lantern-05.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "烟火与成群鱼灯照亮村落",
+          "caption": "短暂的焰火落下，留在屋檐间的是更温柔的红。",
+          "location": "村落夜色",
+          "taken_at": "2026-10-07",
+          "sort_order": 5
+        },
+        {
+          "id": "series-fish-lantern-night-photo-06",
+          "series_id": "series-fish-lantern-night",
+          "image_url": "/photos/fish-lantern-06.webp",
+          "original_url": "/photos/fish-lantern-06.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "鱼灯倒映在黑色水面",
+          "caption": "水把鱼灯收成另一场安静的游行。",
+          "location": "水岸",
+          "taken_at": "2026-10-07",
+          "sort_order": 6
+        },
+        {
+          "id": "series-mountain-water-photo-01",
+          "series_id": "series-mountain-water",
+          "image_url": "/photos/mountain-water-01.webp",
+          "original_url": "/photos/mountain-water-01.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "瀑布、清潭与溪石的山中片段",
+          "caption": "水从岩壁落下，又在掌心与石缝之间恢复透明。",
+          "location": "山中溪谷",
+          "taken_at": "2026-10-07",
+          "sort_order": 1
+        },
+        {
+          "id": "series-mountain-water-photo-02",
+          "series_id": "series-mountain-water",
+          "image_url": "/photos/mountain-water-02.webp",
+          "original_url": "/photos/mountain-water-02.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "索道、松树与山峰在薄雾中交错",
+          "caption": "抬头时，索道从松枝和峰影之间轻轻划过。",
+          "location": "山间",
+          "taken_at": "2026-10-07",
+          "sort_order": 2
+        },
+        {
+          "id": "series-mountain-water-photo-03",
+          "series_id": "series-mountain-water",
+          "image_url": "/photos/mountain-water-03.webp",
+          "original_url": "/photos/mountain-water-03.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "层叠山峰、松树与云雾",
+          "caption": "群峰在云层后反复出现，远近像呼吸一样改变。",
+          "location": "山巅",
+          "taken_at": "2026-10-07",
+          "sort_order": 3
+        },
+        {
+          "id": "series-white-walls-distant-hills-photo-01",
+          "series_id": "series-white-walls-distant-hills",
+          "image_url": "/photos/white-wall-01.webp",
+          "original_url": "/photos/white-wall-01.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "河道两侧的白墙民居与远山",
+          "caption": "白墙沿着水慢慢展开，远山把村落收进清晨。",
+          "location": "山村水岸",
+          "taken_at": "2026-10-07",
+          "sort_order": 1
+        },
+        {
+          "id": "series-white-walls-distant-hills-photo-02",
+          "series_id": "series-white-walls-distant-hills",
+          "image_url": "/photos/white-wall-02.webp",
+          "original_url": "/photos/white-wall-02.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "薄雾、拱桥与水中倒影",
+          "caption": "雾压低了山的声音，只留下桥和倒影彼此回应。",
+          "location": "村落湖畔",
+          "taken_at": "2026-10-07",
+          "sort_order": 2
+        },
+        {
+          "id": "series-white-walls-distant-hills-photo-03",
+          "series_id": "series-white-walls-distant-hills",
+          "image_url": "/photos/white-wall-03.webp",
+          "original_url": "/photos/white-wall-03.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "稻田之间通向群山的笔直道路",
+          "caption": "道路穿过成熟的田野，向云下尚未抵达的地方延伸。",
+          "location": "田野",
+          "taken_at": "2026-10-07",
+          "sort_order": 3
+        },
+        {
+          "id": "series-white-walls-distant-hills-photo-04",
+          "series_id": "series-white-walls-distant-hills",
+          "image_url": "/photos/white-wall-04.webp",
+          "original_url": "/photos/white-wall-04.webp",
+          "width": 1500,
+          "height": 2000,
+          "alt": "河谷、山林与白色村舍",
+          "caption": "河道从屋舍之间退去，山林仍守着日常的边缘。",
+          "location": "河谷村落",
+          "taken_at": "2026-10-07",
+          "sort_order": 4
+        }
+      ]
+    },
+    "essays": {
+      "columns": [
+        "id",
+        "slug",
+        "title",
+        "excerpt",
+        "body",
+        "visibility",
+        "status",
+        "published_at",
+        "access",
+        "sort_order"
+      ],
+      "rows": [
+        {
+          "id": "9f54f0ae-bc65-4964-adb3-70ea65ca523c",
+          "slug": "将明未明之刻",
+          "title": "将明未明之刻",
+          "excerpt": "天在将明未明时最美",
+          "body": "看了这么多日出，觉得最美的不在于太阳出来的那一刻，而在于日出前的那短暂的一段时间，淡淡的光晕，充满期待。\n\n![](/api/assets/uploads/display/a4adf03e-0e5f-480a-bdb5-fbd37541c32a.webp)\n\n这种美不来自结果，而来自尚未确定、却正在靠近的瞬间。",
+          "visibility": "public",
+          "status": "published",
+          "published_at": "2026-10-10",
+          "access": "public",
+          "sort_order": 3
+        },
+        {
+          "id": "essay-private-draft",
+          "slug": "我们的故事从此刻开始",
+          "title": "我们的故事从此刻开始",
+          "excerpt": "关于Songhua和Sonforu",
+          "body": "And So,our story begins.\n\nSonghua是我的名字。\n\n我喜欢松树，喜欢松木香，喜欢中国文化赋予松树坚韧的寓意，喜欢一切具有艺术气息、关于情绪表达的东西，喜欢电影，喜欢摄影，喜欢音乐，喜欢文字... \n\n我想这大概就是Songhua在我身上留下的痕迹。\n\n我喜欢一些理性的东西，喜欢条条框框，喜欢秩序，喜欢一切按照逻辑执行...  \n\n似乎从有记忆开始，生活的主线都是在做理工科的一些。\n\n慢慢的，总有一些瞬间这些东西接不住，总有一些情绪会溢出这些框架。\n\n我隐约觉得我需要一些新的生活态度，需要一些新的生活方式，需要一些新的东西来承接我的喜怒哀乐。\n\n于是我开始慢慢地用五感去感知世界，去观察世界，去思考这个世界。\n\n我想要去充盈我的精神世界，去探索一些新的表达方式，可我不想把自己的情绪剖析地清清楚楚的去说给别人听。\n\n于是我尝试去创作，去创作一些影像、一些文字、去收集一些瞬间，去承接自己的坠落，去稀释自己的痛苦，或隐晦或直白地表达自己。\n\n我想我的心中有一团火，有一些热烈的欲望，我想要追求在永恒的物理秩序中意识冲出束缚的一瞬间。\n\n这大概就是我。这大概就是Sonforu。\n\nSonforu,songhua for u.",
+          "visibility": "public",
+          "status": "published",
+          "published_at": "2026-10-09",
+          "access": "public",
+          "sort_order": 2
+        },
+        {
+          "id": "essay-rain-window",
+          "slug": "希望世界像风一样穿过我",
+          "title": "希望世界像风一样穿过我",
+          "excerpt": "有时拍照并不是为了保存一座城市，而是保存看向它时的那层玻璃。",
+          "body": "下雨的时候，城市会主动放弃一部分清晰。\n\n灯牌、出租车和行人的轮廓混在玻璃上，像尚未冲洗完成的底片。我喜欢这种不确定：它允许记忆晚一点再决定，什么应该留下。",
+          "visibility": "public",
+          "status": "published",
+          "published_at": "2026-10-09",
+          "access": "public",
+          "sort_order": 1
+        }
+      ]
+    },
+    "favorites": {
+      "columns": [
+        "id",
+        "title",
+        "category",
+        "note",
+        "image_url",
+        "url",
+        "sort_order",
+        "published",
+        "access"
+      ],
+      "rows": [
+        {
+          "id": "favorite-01",
+          "title": "雨天的长镜头",
+          "category": "影像",
+          "note": "让画面多停留几秒，常常比解释更多。",
+          "image_url": "/photos/03-night-bridge.webp",
+          "url": "",
+          "sort_order": 1,
+          "published": 1,
+          "access": "public"
+        },
+        {
+          "id": "favorite-02",
+          "title": "在途中写下短句",
+          "category": "习惯",
+          "note": "只记下当时看见的颜色、声音和天气。",
+          "image_url": "/photos/05-river-boat.webp",
+          "url": "",
+          "sort_order": 2,
+          "published": 1,
+          "access": "public"
+        }
+      ]
+    },
+    "app_meta": {
+      "columns": [
+        "key",
+        "value"
+      ],
+      "rows": [
+        {
+          "key": "about_content_v1",
+          "value": "{\"title\":\"把路过的光，\\n慢慢收进来。\",\"body\":\"SONFORU 是一个关于摄影、随笔与个人收藏的空间。\\n\\n这里的照片被重新编排成可以阅读的系列。\\n\\n文字也保留公开与私藏之间的界线：有些适合分享，有些只留给自己。\",\"note\":\"个人介绍与联系方式可在工作室中继续完善。\"}"
+        },
+        {
+          "key": "access_v1_migrated",
+          "value": "2026-10-09T11:10:06.595Z"
+        },
+        {
+          "key": "essay_songhua_title_20261010",
+          "value": "2026-10-10T03:20:58.853Z"
+        },
+        {
+          "key": "photo_series_expansion_20261010_v1",
+          "value": "2026-10-10T05:08:55.872Z"
+        },
+        {
+          "key": "site_copy_v1",
+          "value": "{\"values\":{\"brand\":\"SONFORU\",\"navSeries\":\"摄影\",\"navEssays\":\"随笔\",\"navCollection\":\"收藏\",\"navAbout\":\"关于\",\"studio\":\"工作室\",\"copyright\":\"SONFORU © 2026\",\"homeImageLabel\":\"SERIES 01\",\"homeSeriesLabel\":\"01 / 摄影\",\"enterSeries\":\"进入系列\",\"homeEssayLabel\":\"02 / 随笔\",\"readEssay\":\"阅读全文\",\"homeCollectionLabel\":\"03 / 收藏\",\"homeCollectionTitle\":\"我们终会记得\",\"homeEmptyLabel\":\"SONGFORU / 影像与文字\",\"homeEmptyTitle\":\"内容正在整理中\",\"homeEmptyDescription\":\"公开内容会在这里出现。\",\"seriesLabel\":\"SONFORU / SERIES 01\",\"readSeries\":\"READ MORE\",\"photoUnit\":\"张照片\",\"seriesListTitle\":\"摄影故事\",\"seriesListIntro\":\"沿着地点、光线与记忆继续浏览。\",\"seriesAuthor\":\"SONG\",\"seriesNumberLabel\":\"SERIES\",\"photographs\":\"PHOTOGRAPHS\",\"seriesEmpty\":\"暂时没有公开的摄影系列。\",\"storyLabel\":\"SONFORU / PHOTOGRAPHIC SERIES\",\"storyLede\":\"摄影系列\",\"storyEnd\":\"END\",\"returnSeries\":\"返回系列目录\",\"photoClose\":\"关闭\",\"photoPrev\":\"上一张\",\"photoNext\":\"下一张\",\"essayLabel\":\"NOTES / 随笔\",\"essayTitle\":\"写下来的事\",\"essayIntro\":\"关于观看、行走与偶然留下的片段。\",\"essayEmpty\":\"暂时没有公开的随笔。\",\"essayDetailLabel\":\"NOTE\",\"collectionLabel\":\"CABINET / 收藏\",\"collectionTitle\":\"喜欢的东西\",\"collectionIntro\":\"书、影像、习惯，以及值得反复回看的瞬间。\",\"collectionSource\":\"查看来源\",\"collectionEmpty\":\"暂时没有公开的收藏。\",\"aboutLabel\":\"ABOUT / 关于\"},\"extras\":{},\"textFormats\":{\"copy::brand\":{\"color\":\"black\",\"font\":\"inherit\",\"size\":15,\"bold\":true},\"favorite:favorite-01:title\":{\"color\":\"black\",\"font\":\"song\",\"size\":25,\"bold\":false},\"favorite:favorite-01:note\":{\"color\":\"gray\",\"font\":\"inherit\",\"size\":16,\"bold\":null},\"favorite:fa… [truncated for model]"
+        }
+      ]
+    }
+  },
+  "projection": {
+    "series": [
+      {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    ],
+    "photos": [
+      {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 25
+      },
+      {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    ],
+    "essays": [
+      {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    ],
+    "favorites": [
+      {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    ],
+    "app_meta": [
+      {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,2 @@
+import { authorizeSync, exportSync } from "@/backend/sync/sync-service";
+export async function GET(request:Request){if(!authorizeSync(request))return new Response("Not found",{status:404});try{const since=Number(new URL(request.url).searchParams.get("since")??0);return Response.json(await exportSync(Number.isFinite(since)?since:0),{headers:{"cache-control":"no-store"}});}catch(error){return Response.json({error:error instanceof Error?error.message:"导出失败"},{status:500});}}
