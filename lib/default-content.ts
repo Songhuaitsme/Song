@@ -1,3 +1,4 @@
+import { defaultSiteCopy, type SiteCopy } from "@/lib/site-copy";
 export type Photo = { id: string; seriesId: string; imageUrl: string; originalUrl: string; width: number; height: number; alt: string; caption: string; location: string; takenAt: string; sortOrder: number };
 export type AccessLevel = "draft" | "private" | "public";
 export type Series = { id: string; slug: string; title: string; description: string; coverUrl: string; access: AccessLevel; sortOrder: number; photos: Photo[] };
@@ -5,7 +6,7 @@ export type Essay = { id: string; slug: string; title: string; excerpt: string; 
 export type Favorite = { id: string; title: string; category: string; note: string; imageUrl: string; url: string; access: AccessLevel; sortOrder: number };
 export type AboutContent = { title: string; body: string; note: string };
 export const defaultAbout: AboutContent = { title: "把路过的光，\n慢慢收进来。", body: "SONG 是一个关于摄影、随笔与个人收藏的空间。\n\n这里的照片不是按地点罗列，而是被重新编排成可以阅读的系列。文字也保留公开与私藏之间的界线：有些适合分享，有些只留给自己。", note: "个人介绍与联系方式可在工作室中继续完善。" };
-export type SiteContent = { about: AboutContent; series: Series[]; essays: Essay[]; favorites: Favorite[] };
+export type SiteContent = { copy: SiteCopy; about: AboutContent; series: Series[]; essays: Essay[]; favorites: Favorite[] };
 
 const mistCityPhotos: Photo[] = [
   { id: "photo-01", seriesId: "series-between-mist-and-city", imageUrl: "/photos/01-fog-clock.webp", originalUrl: "/photos/01-fog-clock.webp", width: 1467, height: 2200, alt: "雾气中的城市钟楼与高层建筑", caption: "雾把远处的楼擦去，只留下钟楼确认时间仍在经过。", location: "城市途中", takenAt: "", sortOrder: 1 },
@@ -110,6 +111,7 @@ const companionPhotos = seriesPhotos(
 
 export const defaultContent: SiteContent = {
   about: defaultAbout,
+  copy: defaultSiteCopy,
   series: [
     { id: "series-fish-lantern-night", slug: "fish-lantern-night", title: "鱼灯照夜", description: "鱼灯从白墙黛瓦与荷塘之间游过。人群、火光和水中倒影共同组成一场只在夜里发生的迁徙。", coverUrl: "/photos/fish-lantern-02.webp", access: "public", sortOrder: 1, photos: fishLanternPhotos },
     { id: "series-between-mist-and-city", slug: "between-mist-and-city", title: "在雾与城之间", description: "沿着雨、桥与穿城而过的轨道，收集城市暂时失焦的时刻。", coverUrl: "/photos/01-fog-clock.webp", access: "public", sortOrder: 2, photos: mistCityPhotos },

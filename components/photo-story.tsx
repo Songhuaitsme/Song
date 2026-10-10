@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Photo } from "@/lib/default-content";
 
-export function PhotoStory({ photos }: { photos: Photo[] }) {
+export function PhotoStory({ photos, labels = {close:"关闭",prev:"上一张",next:"下一张"} }: { photos: Photo[]; labels?: {close:string;prev:string;next:string} }) {
   const [active, setActive] = useState<number | null>(null);
   const touchStart = useRef<number | null>(null);
   useEffect(() => {
@@ -28,10 +28,10 @@ export function PhotoStory({ photos }: { photos: Photo[] }) {
       <figcaption><span>{String(index + 1).padStart(2,"0")}</span><p>{photo.caption}</p><small>{photo.location}{photo.takenAt ? ` · ${photo.takenAt}` : ""}</small></figcaption>
     </figure>)}</div>
     {active !== null && <div className="lightbox" role="dialog" aria-modal="true" aria-label="照片全屏查看" onPointerDown={(e)=>touchStart.current=e.clientX} onPointerUp={(e)=>finishSwipe(e.clientX)}>
-      <button className="lightbox-close" onClick={()=>setActive(null)} aria-label="关闭全屏查看">关闭</button>
-      <button className="lightbox-prev" onClick={()=>setActive((active-1+photos.length)%photos.length)} aria-label="上一张">上一张</button>
+      <button className="lightbox-close" onClick={()=>setActive(null)} aria-label="关闭全屏查看">{labels.close || "×"}</button>
+      <button className="lightbox-prev" onClick={()=>setActive((active-1+photos.length)%photos.length)} aria-label="上一张">{labels.prev || "‹"}</button>
       <img src={photos[active].imageUrl} alt={photos[active].alt} />
-      <button className="lightbox-next" onClick={()=>setActive((active+1)%photos.length)} aria-label="下一张">下一张</button>
+      <button className="lightbox-next" onClick={()=>setActive((active+1)%photos.length)} aria-label="下一张">{labels.next || "›"}</button>
       <p>{String(active+1).padStart(2,"0")} / {String(photos.length).padStart(2,"0")} · {photos[active].caption}</p>
     </div>}
   </>;

@@ -1,3 +1,5 @@
+import { getSiteCopy } from "@/lib/content-store";
+import { ExtraPageCopy } from "@/components/extra-page-copy";
 import { contentPath, decodeContentSlug } from "@/lib/content-path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -22,9 +24,11 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 export default async function EssayDetail({params}:{params:Promise<{slug:string}>}){
   const {slug:routeSlug}=await params;
   const slug=decodeContentSlug(routeSlug);
+  const copy=await getSiteCopy();
+  const c=copy.values;
   const viewer=await getViewerContext();
   const item=(await getSiteContent(viewer.ownerMode)).essays.find((essay)=>essay.slug===slug);
   if(!item)notFound();
   const returnTo=contentPath("essays", slug);
-  return <main><SiteHeader viewer={viewer} returnTo={returnTo}/><article className="essay-article"><header><p className="eyebrow">{item.publishedAt} / NOTE</p>{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><p>{item.excerpt}</p>{viewer.ownerMode&&<a className="owner-edit-link" href={`/studio?tab=essays#${item.id}`}>编辑此随笔</a>}</header><EssayBody body={item.body}/></article></main>;
+  return <main><SiteHeader viewer={viewer} returnTo={returnTo}/><article className="essay-article"><header><p className="eyebrow">{item.publishedAt}{c.essayDetailLabel ? ` / ${c.essayDetailLabel}` : ""}</p>{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><p>{item.excerpt}</p>{viewer.ownerMode&&<a className="owner-edit-link" href={`/studio?tab=essays#${item.id}`}>编辑此随笔</a>}</header><EssayBody body={item.body}/></article><ExtraPageCopy copy={copy} page="essay"/></main>;
 }

@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { defaultSiteCopy, validateSiteCopy, type SiteCopy } from "@/lib/site-copy";
 import { essayImageUrls } from "@/lib/essay-body";
 import { env } from "cloudflare:workers";
 import {
@@ -116,6 +118,7 @@ function fallbackContent(includePrivate: boolean): SiteContent {
   const cloned = structuredClone(defaultContent);
   if (includePrivate) return cloned;
   return {
+    copy: cloned.copy,
     about: cloned.about,
     series: cloned.series.filter((item) => item.access === "public"),
     essays: cloned.essays.filter((item) => item.access === "public"),
@@ -141,7 +144,7 @@ export async function getSiteContent(includePrivate = false): Promise<SiteConten
     const series = (seriesResult.results as Record<string, unknown>[]).map((r): Series => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), description:String(r.description), coverUrl:String(r.cover_url), access:access(r.access), sortOrder:Number(r.sort_order), photos:photos.filter((p)=>p.seriesId===String(r.id)) }));
     const essays = (essayResult.results as Record<string, unknown>[]).map((r): Essay => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), excerpt:String(r.excerpt), body:String(r.body), access:access(r.access), publishedAt:String(r.published_at), sortOrder:Number(r.sort_order) }));
     const favorites = (favoriteResult.results as Record<string, unknown>[]).map((r): Favorite => ({ id:String(r.id), title:String(r.title), category:String(r.category), note:String(r.note), imageUrl:String(r.image_url), url:String(r.url), access:access(r.access), sortOrder:Number(r.sort_order) }));
-    return { series, essays, favorites, about: await getAboutContent() };
+    return { series, essays, favorites, about: await getAboutContent(), copy: await getSiteCopy() };
   } catch (error) {
     console.error("Content database unavailable", error);
     return fallbackContent(includePrivate);
@@ -202,7 +205,7 @@ export async function getAssetAccess(assetUrl: string): Promise<AccessLevel | nu
 }
 
 export function validateAboutContent(record: Record<string, unknown>): AboutContent {
-  return { title: text(record.title, "标题", 200), body: text(record.body, "介绍正文", 10000), note: text(record.note, "补充说明", 2000) };
+  return { title: text(record.title, "关于标题", 200), body: text(record.body, "介绍正文", 10000), note: text(record.note, "补充说明", 2000) };
 }
 
 export async function getAboutContent(): Promise<AboutContent> {
@@ -223,4 +226,13 @@ export async function saveAboutContent(record: Record<string, unknown>) {
   if (!db) throw new Error("数据库暂时不可用");
   await db.prepare("INSERT INTO app_meta (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind("about_content_v1", JSON.stringify(content)).run();
   return content;
+}
+
+export const getSiteCopy = cache(async (): Promise<SiteCopy> => {
+  const db=getDatabase();if(!db)return structuredClone(defaultSiteCopy);
+  try{const row=await db.prepare("SELECT value FROM app_meta WHERE key = ?").bind("site_copy_v1").first<{value:string}>();return row?validateSiteCopy(JSON.parse(row.value)):structuredClone(defaultSiteCopy);}catch(error){console.error("Page copy unavailable",error);return structuredClone(defaultSiteCopy);}
+});
+export async function saveSiteCopy(record: Record<string,unknown>) {
+  const copy=validateSiteCopy(record);const db=getDatabase();if(!db)throw new Error("数据库暂时不可用");
+  await db.prepare("INSERT INTO app_meta (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind("site_copy_v1",JSON.stringify(copy)).run();return copy;
 }
