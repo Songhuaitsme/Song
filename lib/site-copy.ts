@@ -11,7 +11,10 @@ export type CopyKey = typeof copyFields[number][1];
 export const pageGroups = [ ["global","导航与页脚"],["home","首页"],["series","摄影目录"],["story","摄影详情"],["essays","随笔目录"],["essay","随笔详情"],["collection","收藏"],["about","关于"] ] as const;
 export type CopyPage = typeof pageGroups[number][0];
 export type CopyRow = { id: string; text: string };
-export type SiteCopy = { values: Record<CopyKey,string>; extras: Partial<Record<CopyPage,CopyRow[]>> };
+export const fontOptions = [["song","宋体"],["sans","黑体"],["kai","楷体"],["hei","微软雅黑"]] as const;
+export type FontChoice = typeof fontOptions[number][0];
+export type TypeSettings = { titleFont:FontChoice; bodyFont:FontChoice; titleSize:number; bodySize:number };
+export type SiteCopy = { typography?:Partial<Record<CopyPage,TypeSettings>>; values: Record<CopyKey,string>; extras: Partial<Record<CopyPage,CopyRow[]>> };
 export const defaultSiteCopy: SiteCopy = { values: Object.fromEntries(copyFields.map((field)=>[field[1],field[3]])) as Record<CopyKey,string>, extras: {} };
 export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
   const values = record.values;
@@ -33,6 +36,17 @@ export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
         if(!row||typeof row!=="object"||typeof row.id!=="string"||!row.id||row.id.length>100||ids.has(row.id)||typeof row.text!=="string"||row.text.length>10000)throw new Error("新增段落格式无效");
         ids.add(row.id);return {id:row.id,text:row.text.trim()};
       });
+    }
+  }
+  if(record.typography !== undefined) {
+    if(!record.typography || typeof record.typography !== "object" || Array.isArray(record.typography))throw new Error("字体设置格式无效");
+    result.typography={};
+    for(const [page] of pageGroups){
+      const setting=(record.typography as Record<string,unknown>)[page];if(setting===undefined)continue;
+      if(!setting||typeof setting!=="object"||Array.isArray(setting))throw new Error("字体设置格式无效");
+      const t=setting as TypeSettings;
+      if(!fontOptions.some(([key])=>key===t.titleFont)||!fontOptions.some(([key])=>key===t.bodyFont)||!Number.isInteger(t.titleSize)||!Number.isInteger(t.bodySize)||(t.titleSize!==0&&(t.titleSize<12||t.titleSize>120))||(t.bodySize!==0&&(t.bodySize<10||t.bodySize>40)))throw new Error("字号范围：标题 12–120，正文 10–40；0 为默认字号");
+      result.typography[page]={titleFont:t.titleFont,bodyFont:t.bodyFont,titleSize:t.titleSize,bodySize:t.bodySize};
     }
   }
   return result;
