@@ -79,6 +79,16 @@ async function seed(db: D1Database) {
   await db.batch(statements);
 }
 
+async function applyRequestedContentUpdates(db: D1Database) {
+  const key = "essay_songhua_title_20261010";
+  if (await db.prepare("SELECT value FROM app_meta WHERE key = ?").bind(key).first()) return;
+  await db.batch([
+    db.prepare("UPDATE essays SET title = ? WHERE id = ? AND title = ? AND NOT EXISTS (SELECT 1 FROM app_meta WHERE key = ?)")
+      .bind("一段关于Songhua的独白", "essay-private-draft", "一封从未寄出的短笺", key),
+    db.prepare("INSERT OR IGNORE INTO app_meta (key, value) VALUES (?, ?)").bind(key, new Date().toISOString()),
+  ]);
+}
+
 function fallbackContent(includePrivate: boolean): SiteContent {
   const cloned = structuredClone(defaultContent);
   if (includePrivate) return cloned;
@@ -95,6 +105,7 @@ export async function getSiteContent(includePrivate = false): Promise<SiteConten
   try {
     await migrateLegacyAccess(db);
     await seed(db);
+    await applyRequestedContentUpdates(db);
     const [seriesResult, photoResult, essayResult, favoriteResult] = await db.batch([
       db.prepare(`SELECT * FROM series ${includePrivate ? "" : "WHERE access = 'public'"} ORDER BY sort_order, title`),
       db.prepare("SELECT * FROM photos ORDER BY series_id, sort_order"),
@@ -117,6 +128,7 @@ export async function upsertEntity(entity: Entity, record: Record<string, unknow
   if (!db) throw new Error("数据库暂时不可用");
   await migrateLegacyAccess(db);
   await seed(db);
+  await applyRequestedContentUpdates(db);
   const id = String(record.id || crypto.randomUUID());
 
   if (entity === "series") {
