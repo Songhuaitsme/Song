@@ -74,7 +74,7 @@ async function seed(db: D1Database) {
     statements.push(db.prepare("INSERT OR IGNORE INTO series (id,slug,title,description,cover_url,access,published,sort_order) VALUES (?,?,?,?,?,?,?,?)").bind(item.id,item.slug,item.title,item.description,item.coverUrl,item.access,item.access === "public" ? 1 : 0,item.sortOrder));
     for (const photo of item.photos) statements.push(db.prepare("INSERT OR IGNORE INTO photos (id,series_id,image_url,original_url,width,height,alt,caption,location,taken_at,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?)").bind(photo.id,photo.seriesId,photo.imageUrl,photo.originalUrl,photo.width,photo.height,photo.alt,photo.caption,photo.location,photo.takenAt,photo.sortOrder));
   }
-  for (const item of defaultContent.essays) statements.push(db.prepare("INSERT OR IGNORE INTO essays (id,slug,title,excerpt,body,access,visibility,status,published_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(item.id,item.slug,item.title,item.excerpt,item.body,item.access,item.access === "public" ? "public" : "private",item.access === "draft" ? "draft" : "published",item.publishedAt));
+  for (const item of defaultContent.essays) statements.push(db.prepare("INSERT OR IGNORE INTO essays (id,slug,title,excerpt,body,access,visibility,status,published_at,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)").bind(item.id,item.slug,item.title,item.excerpt,item.body,item.access,item.access === "public" ? "public" : "private",item.access === "draft" ? "draft" : "published",item.publishedAt,item.sortOrder));
   for (const item of defaultContent.favorites) statements.push(db.prepare("INSERT OR IGNORE INTO favorites (id,title,category,note,image_url,url,access,sort_order,published) VALUES (?,?,?,?,?,?,?,?,?)").bind(item.id,item.title,item.category,item.note,item.imageUrl,item.url,item.access,item.sortOrder,item.access === "public" ? 1 : 0));
   await db.batch(statements);
 }
@@ -130,12 +130,12 @@ export async function getSiteContent(includePrivate = false): Promise<SiteConten
     const [seriesResult, photoResult, essayResult, favoriteResult] = await db.batch([
       db.prepare(`SELECT * FROM series ${includePrivate ? "" : "WHERE access = 'public'"} ORDER BY sort_order, title`),
       db.prepare("SELECT * FROM photos ORDER BY series_id, sort_order"),
-      db.prepare(`SELECT * FROM essays ${includePrivate ? "" : "WHERE access = 'public'"} ORDER BY published_at DESC, title`),
+      db.prepare(`SELECT * FROM essays ${includePrivate ? "" : "WHERE access = 'public'"} ORDER BY sort_order, published_at DESC, title`),
       db.prepare(`SELECT * FROM favorites ${includePrivate ? "" : "WHERE access = 'public'"} ORDER BY sort_order, title`),
     ]);
     const photos = (photoResult.results as Record<string, unknown>[]).map((r): Photo => ({ id:String(r.id), seriesId:String(r.series_id), imageUrl:String(r.image_url), originalUrl:String(r.original_url), width:Number(r.width), height:Number(r.height), alt:String(r.alt), caption:String(r.caption), location:String(r.location), takenAt:String(r.taken_at), sortOrder:Number(r.sort_order) }));
     const series = (seriesResult.results as Record<string, unknown>[]).map((r): Series => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), description:String(r.description), coverUrl:String(r.cover_url), access:access(r.access), sortOrder:Number(r.sort_order), photos:photos.filter((p)=>p.seriesId===String(r.id)) }));
-    const essays = (essayResult.results as Record<string, unknown>[]).map((r): Essay => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), excerpt:String(r.excerpt), body:String(r.body), access:access(r.access), publishedAt:String(r.published_at) }));
+    const essays = (essayResult.results as Record<string, unknown>[]).map((r): Essay => ({ id:String(r.id), slug:String(r.slug), title:String(r.title), excerpt:String(r.excerpt), body:String(r.body), access:access(r.access), publishedAt:String(r.published_at), sortOrder:Number(r.sort_order) }));
     const favorites = (favoriteResult.results as Record<string, unknown>[]).map((r): Favorite => ({ id:String(r.id), title:String(r.title), category:String(r.category), note:String(r.note), imageUrl:String(r.image_url), url:String(r.url), access:access(r.access), sortOrder:Number(r.sort_order) }));
     return { series, essays, favorites };
   } catch (error) {
@@ -162,7 +162,7 @@ export async function upsertEntity(entity: Entity, record: Record<string, unknow
   }
   if (entity === "essay") {
     const level = access(record.access);
-    await db.prepare("INSERT INTO essays (id,slug,title,excerpt,body,access,visibility,status,published_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,excerpt=excluded.excerpt,body=excluded.body,access=excluded.access,visibility=excluded.visibility,status=excluded.status,published_at=excluded.published_at").bind(id,safeSlug(record.slug),text(record.title,"标题",200),text(record.excerpt,"摘要",1000),text(record.body,"正文",100000),level,level === "public" ? "public" : "private",level === "draft" ? "draft" : "published",text(record.publishedAt,"发布日期",30)).run();
+    await db.prepare("INSERT INTO essays (id,slug,title,excerpt,body,access,visibility,status,published_at,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,excerpt=excluded.excerpt,body=excluded.body,access=excluded.access,visibility=excluded.visibility,status=excluded.status,published_at=excluded.published_at,sort_order=excluded.sort_order").bind(id,safeSlug(record.slug),text(record.title,"标题",200),text(record.excerpt,"摘要",1000),text(record.body,"正文",100000),level,level === "public" ? "public" : "private",level === "draft" ? "draft" : "published",text(record.publishedAt,"发布日期",30),number(record.sortOrder)).run();
   }
   if (entity === "favorite") {
     const level = access(record.access);
