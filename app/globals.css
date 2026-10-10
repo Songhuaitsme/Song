@@ -64,3 +64,14 @@
 .collection-page .favorites-grid p{font-size:.95rem;line-height:1.9;margin:0 0 1rem;overflow-wrap:anywhere}
 .collection-page .favorites-grid a:focus-visible{outline:2px solid var(--jade);outline-offset:5px}
 @media(max-width:760px){.collection-page .favorites-grid,.collection-page .list-empty{width:calc(100% - 40px)}.collection-page .favorites-grid{grid-template-columns:1fr;gap:2.75rem;margin-bottom:4rem}.collection-page .favorites-grid article>div:not(.favorite-image){margin-top:1rem;padding-top:1rem}.collection-page .favorites-grid p{font-size:.88rem}.collection-page .favorites-grid h2{font-size:1.55rem}}
+
+/* About: a calm, continuous reading column. */
+.about-index .about-page{width:min(1040px,calc(100% - 96px));display:block;margin:0 auto;padding:clamp(3.5rem,6vw,6rem) 0 6rem}
+.about-index .about-page>.eyebrow{margin:0 0 1.25rem;font-size:.72rem;letter-spacing:.16em}
+.about-index .about-page h1{margin:0 0 2.75rem;font-size:clamp(2.5rem,5vw,5rem);line-height:1.3;letter-spacing:.025em;font-weight:500}
+.about-index .about-page h1 span{display:block}
+.about-index .about-page>div{max-width:42rem;padding-top:2rem;border-top:1px solid var(--line);font-size:1.05rem;line-height:2}
+.about-index .about-page>div p{margin:0 0 1.2rem}
+.about-index .about-page>div p:first-child{font-size:1.15rem}
+.about-index .about-page .about-note{margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--line);font-family:"Inter","Noto Sans SC","Microsoft YaHei",sans-serif;font-size:.82rem;line-height:1.8}
+@media(max-width:760px){.about-index .about-page{width:calc(100% - 40px);padding:3rem 0 4rem}.about-index .about-page h1{font-size:clamp(2rem,7.6vw,3.75rem);margin-bottom:2rem;line-height:1.4}.about-index .about-page>div{font-size:.98rem;padding-top:1.5rem}.about-index .about-page>div p:first-child{font-size:1.05rem}.about-index .about-page .about-note{font-size:.78rem;margin-top:1.5rem}}
