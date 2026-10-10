@@ -30,9 +30,9 @@ export default async function SeriesDetail({params}:{params:Promise<{slug:string
   if(!item)notFound();
   const returnTo=contentPath("series", slug);
   const coverAlt=item.photos.find((photo)=>photo.imageUrl===item.coverUrl)?.alt||item.title;
-  return <main><SiteHeader viewer={viewer} returnTo={returnTo}/><header className="story-hero">
+  return <main className="story-editorial"><SiteHeader viewer={viewer} returnTo={returnTo}/><header className="story-hero">
     <img className="story-hero-image" src={item.coverUrl} alt={coverAlt} fetchPriority="high"/>
     <div className="story-hero-shade"/>
-    <div className="story-hero-copy">{c.storyLabel && <p className="eyebrow">{c.storyLabel}</p>}{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><p>{item.description}</p><div className="story-hero-meta"><span>{String(item.photos.length).padStart(2,"0")} {c.photographs}</span>{c.seriesAuthor && <span>{c.seriesAuthor}</span>}</div>{viewer.ownerMode&&<a className="story-hero-edit" href={`/studio?tab=series#${item.id}`}>编辑此系列</a>}</div>
+    <div className="story-hero-copy">{c.storyLabel && <p className="eyebrow">{c.storyLabel}</p>}{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><div className="story-hero-meta"><span>{String(item.photos.length).padStart(2,"0")} {c.photographs}</span>{c.seriesAuthor && <span>{c.seriesAuthor}</span>}</div>{viewer.ownerMode&&<a className="story-hero-edit" href={`/studio?tab=series#${item.id}`}>编辑此系列</a>}</div>
   </header><div className="story-lede">{c.storyLede && <p>{c.storyLede}</p>}<p>{item.description}</p></div><PhotoStory photos={item.photos} labels={{close:c.photoClose,prev:c.photoPrev,next:c.photoNext}}/><div className="story-end"><span>{c.storyEnd}{c.storyEnd ? " / " : ""}{item.title}</span>{c.returnSeries && <a href="/series">{c.returnSeries}</a>}</div><ExtraPageCopy copy={copy} page="story"/></main>;
 }
