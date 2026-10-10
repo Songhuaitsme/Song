@@ -141,3 +141,6 @@
 .story-editorial .story-end{width:min(960px,calc(100% - 96px));margin-bottom:4rem;gap:1.5rem}
 .story-editorial .extra-page-copy{width:min(640px,calc(100% - 48px))}
 @media(max-width:760px){.story-editorial .story-hero{min-height:60svh}.story-editorial .story-hero-copy{width:calc(100% - 40px);padding:3rem 0}.story-editorial .story-hero h1{font-size:clamp(2.2rem,9vw,3.5rem)}.story-editorial .story-lede{padding-top:3rem}.story-editorial .story-lede p:last-child{font-size:.95rem}.story-editorial .photo-story{width:calc(100% - 40px);margin-top:2.5rem}.story-editorial .photo-story .story-photo-portrait{width:min(100%,480px)}.story-editorial .photo-story figcaption{margin-top:1rem}.story-editorial .photo-story figcaption p{font-size:.9rem}.story-editorial .story-end{width:calc(100% - 40px);font-size:.72rem;flex-wrap:wrap}}
+
+/* All headings share the site's Song typeface across platforms. */
+h1,h2,h3,h4,h5,h6{font-family:"Songti SC","SimSun","STSong","Noto Serif SC",serif!important}
