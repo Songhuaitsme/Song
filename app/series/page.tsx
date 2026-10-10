@@ -14,7 +14,7 @@ export default async function SeriesPage() {
   const [featured, ...remaining] = series;
   return <main className="photography-page">
     <SiteHeader viewer={viewer} returnTo="/series"/>
-    <div className="photography-heading"><h1>摄影系列</h1><p>PHOTOGRAPHIC STORIES</p></div>
+    <h1 className="sr-only">摄影系列</h1>
     {featured ? <>
       <section className="series-feature" aria-labelledby="series-feature-title">
         <a className="series-feature-image" href={contentPath("series", featured.slug)} aria-label={`查看摄影系列：${featured.title}`}><img src={featured.coverUrl} alt={featured.photos.find((photo) => photo.imageUrl === featured.coverUrl)?.alt || featured.title} fetchPriority="high"/></a>
