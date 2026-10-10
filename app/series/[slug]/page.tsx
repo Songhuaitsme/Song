@@ -1,3 +1,4 @@
+import { contentPath, decodeContentSlug } from "@/lib/content-path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AccessBadge } from "@/components/access-badge";
@@ -9,7 +10,8 @@ import { getSiteContent } from "@/lib/content-store";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
-  const {slug}=await params;
+  const {slug:routeSlug}=await params;
+  const slug=decodeContentSlug(routeSlug);
   const viewer=await getViewerContext();
   const item=(await getSiteContent(viewer.ownerMode)).series.find((series)=>series.slug===slug);
   if(!item)return {title:"未找到系列",robots:{index:false,follow:false}};
@@ -17,10 +19,11 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 }
 
 export default async function SeriesDetail({params}:{params:Promise<{slug:string}>}){
-  const {slug}=await params;
+  const {slug:routeSlug}=await params;
+  const slug=decodeContentSlug(routeSlug);
   const viewer=await getViewerContext();
   const item=(await getSiteContent(viewer.ownerMode)).series.find((series)=>series.slug===slug);
   if(!item)notFound();
-  const returnTo=`/series/${slug}`;
+  const returnTo=contentPath("series", slug);
   return <main><SiteHeader viewer={viewer} returnTo={returnTo}/><header className="story-header"><p className="eyebrow">PHOTOGRAPHIC SERIES</p>{viewer.ownerMode&&<AccessBadge access={item.access}/>}<h1>{item.title}</h1><p>{item.description}</p><span>{item.photos.length} PHOTOGRAPHS</span>{viewer.ownerMode&&<a className="owner-edit-link" href={`/studio?tab=series#${item.id}`}>编辑此系列</a>}</header><PhotoStory photos={item.photos}/><div className="story-end"><span>END / {item.title}</span><a href="/series">返回系列目录</a></div></main>;
 }
