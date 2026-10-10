@@ -79,7 +79,7 @@
 .about-index .about-paragraph,.about-index .about-note{white-space:pre-line;overflow-wrap:anywhere}.about-index .about-page h1 span{overflow-wrap:anywhere}.about-index .about-page .owner-edit-link{margin-left:0}.about-editor{max-width:860px}.about-editor label{font-size:.9rem;font-weight:500}.about-editor .privacy-note{margin-top:-.5rem}
 
 /* Site navigation: compact masthead and clear section state. */
-.site-header{width:min(1240px,calc(100% - 96px));min-height:60px;gap:2rem}
+.site-header{width:calc(100% - 96px);min-height:60px;gap:2rem}
 .site-header .wordmark{display:inline-flex;align-items:center;min-height:44px;font-size:1.05rem;letter-spacing:.18em;line-height:1;transition:color .18s ease}
 .site-header .wordmark:hover{color:var(--jade)}
 .site-header nav{align-items:center;gap:2rem;font-size:.88rem}
