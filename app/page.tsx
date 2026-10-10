@@ -19,6 +19,6 @@ export default async function Home() {
     </section> : <section className="public-empty"><p className="eyebrow">SONG / 影像与文字</p><h1>内容正在整理中</h1><p>公开内容会在这里出现。</p></section>}
     {essay && <section className="editorial-section home-essay"><div><p className="section-number">02 / 随笔</p>{viewer.ownerMode && <AccessBadge access={essay.access}/>}<h2>{essay.title}</h2></div><div><p>{essay.excerpt}</p><a href={contentPath("essays", essay.slug)} className="text-link">阅读全文</a>{viewer.ownerMode && <a href={`/studio?tab=essays#${essay.id}`} className="owner-edit-link">编辑此随笔</a>}</div></section>}
     {content.favorites.length > 0 && <section className="editorial-section home-collection"><div><p className="section-number">03 / 收藏</p><h2>最近留下的东西</h2></div><div className="collection-preview">{content.favorites.map((item) => <article key={item.id}>{viewer.ownerMode && <AccessBadge access={item.access}/>}<span>{item.category}</span><h3>{item.title}</h3><p>{item.note}</p>{viewer.ownerMode && <a href={`/studio?tab=favorites#${item.id}`} className="owner-edit-link">编辑</a>}</article>)}</div></section>}
-    <footer className="site-footer"><span>SONG © 2026</span><a href={viewer.isAdmin ? "/studio" : "/login?returnTo=%2Fstudio"}>工作室</a></footer>
+    <footer className="site-footer"><span>SONFORU © 2026</span><a href={viewer.isAdmin ? "/studio" : "/login?returnTo=%2Fstudio"} className="footer-studio">工作室<span aria-hidden="true">↗</span></a></footer>
   </main>;
 }

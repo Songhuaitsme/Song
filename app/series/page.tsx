@@ -41,6 +41,6 @@ export default async function SeriesPage() {
         </article>)}</div>
       </section>}
     </> : <div className="list-empty">暂时没有公开的摄影系列。</div>}
-    <footer className="site-footer"><span>SONFORU © 2026</span><a href={viewer.isAdmin ? "/studio" : "/login?returnTo=%2Fstudio"}>工作室</a></footer>
+    <footer className="site-footer"><span>SONFORU © 2026</span><a href={viewer.isAdmin ? "/studio" : "/login?returnTo=%2Fstudio"} className="footer-studio">工作室<span aria-hidden="true">↗</span></a></footer>
   </main>;
 }
