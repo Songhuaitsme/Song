@@ -12,7 +12,7 @@ export function authorizeSync(request:Request){const header=request.headers.get(
 export async function exportSync(since=0){
   const db=getDatabase();if(!db)throw new Error("数据库暂时不可用");
   const result:Record<string,unknown[]>={};let revision=since;
-  for(const table of tables){const key=table==="site_settings"?"key":"id";const rows=await db.prepare(`SELECT * FROM ${table} WHERE updated_at>? ORDER BY updated_at,${key}`).bind(since).all<Record<string,unknown>>();result[table]=rows.results;for(const row of rows.results)revision=Math.max(revision,Number(row.updated_at??0));}
+  for(const table of tables){const key=table==="site_settings"?"key":"id",operator=since<=0?">=":">";const rows=await db.prepare(`SELECT * FROM ${table} WHERE updated_at${operator}? ORDER BY updated_at,${key}`).bind(Math.max(0,since)).all<Record<string,unknown>>();result[table]=rows.results;for(const row of rows.results)revision=Math.max(revision,Number(row.updated_at??0));}
   return{schemaVersion:SYNC_SCHEMA_VERSION,revision,generatedAt:Date.now(),records:result};
 }
 
