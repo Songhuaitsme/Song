@@ -16,6 +16,7 @@ import { imageMarkup } from "@/shared/essay-body";
 
 import { PageCopyEditor } from "@/frontend/components/page-copy-editor";
 import { ConflictCenter, MediaLibrary } from "@/frontend/components/studio-operations";
+import { uploadMediaMultipart } from "@/frontend/upload-media";
 
 type Entity = "series" | "photo" | "essay" | "favorite" | "about" | "copy";
 type StudioTab = "series" | "essays" | "favorites" | "about" | "copy" | "media" | "sync";
@@ -92,10 +93,7 @@ export function StudioDashboard({ initialContent, userName, csrfToken, initialTa
       if(file.size>25*1024*1024)throw new Error("图片不能超过 25MB");
       if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("仅支持 JPEG、PNG 或 WebP 图片");
       const resized=await resizeForWeb(file);
-      const form=new FormData();form.append("original",file);form.append("display",new File([resized.blob],"display.webp",{type:"image/webp"}));
-      const response=await fetch("/api/upload",{method:"POST",headers:{"x-csrf-token":csrfToken},body:form});
-      const result=await response.json() as {imageUrl?:string;error?:string};
-      if(!response.ok||!result.imageUrl)throw new Error(result.error||"上传失败");
+      const result=await uploadMediaMultipart({original:file,display:resized.blob,width:resized.width,height:resized.height,csrfToken,assignment:`essay:${essay.id}`});
       const input=essayInputs.current.get(essay.id);
       const position=input?.selectionStart;
       const markup=imageMarkup(result.imageUrl);
@@ -110,7 +108,7 @@ export function StudioDashboard({ initialContent, userName, csrfToken, initialTa
   };
 
   const setCover=async(series:Series,photo:Photo)=>{const updated={...series,coverUrl:photo.imageUrl};updateSeries(series.id,{coverUrl:photo.imageUrl});await save("series",updated);};
-  const upload=async(event:React.ChangeEvent<HTMLInputElement>,series:Series)=>{const file=event.target.files?.[0];if(!file)return;setBusy(true);try{const resized=await resizeForWeb(file);const form=new FormData();form.append("original",file);form.append("display",new File([resized.blob],"display.webp",{type:"image/webp"}));const response=await fetch("/api/upload",{method:"POST",headers:{"x-csrf-token":csrfToken},body:form});const result=await response.json() as {imageUrl?:string;originalUrl?:string;error?:string};if(!response.ok||!result.imageUrl||!result.originalUrl)throw new Error(result.error||"上传失败");const photo:Photo={id:crypto.randomUUID(),seriesId:series.id,imageUrl:result.imageUrl,originalUrl:result.originalUrl,width:resized.width,height:resized.height,alt:"新上传的摄影作品",caption:"",location:"",takenAt:"",sortOrder:series.photos.length+1};await api({action:"upsert",entity:"photo",record:photo},csrfToken);if(!series.coverUrl)await api({action:"upsert",entity:"series",record:{...series,coverUrl:photo.imageUrl}},csrfToken);await reload();toast.success("照片已上传");}catch(error){toast.error(error instanceof Error?error.message:"上传失败");}finally{setBusy(false);event.target.value=""}};
+  const upload=async(event:React.ChangeEvent<HTMLInputElement>,series:Series)=>{const file=event.target.files?.[0];if(!file)return;setBusy(true);try{const resized=await resizeForWeb(file);const result=await uploadMediaMultipart({original:file,display:resized.blob,width:resized.width,height:resized.height,csrfToken,assignment:`series:${series.id}`});const photo:Photo={id:crypto.randomUUID(),seriesId:series.id,imageUrl:result.imageUrl,originalUrl:result.originalUrl,width:resized.width,height:resized.height,alt:"新上传的摄影作品",caption:"",location:"",takenAt:"",sortOrder:series.photos.length+1};await api({action:"upsert",entity:"photo",record:photo},csrfToken);if(!series.coverUrl)await api({action:"upsert",entity:"series",record:{...series,coverUrl:photo.imageUrl}},csrfToken);await reload();toast.success("照片已上传");}catch(error){toast.error(error instanceof Error?error.message:"上传失败");}finally{setBusy(false);event.target.value=""}};
 
   return <div className="studio-shell"><header className="studio-top"><div><span>SONG / 工作室</span><h1>内容编辑</h1><p>{userName} · {content.series.length} 个系列 · {photoCount} 张照片</p></div><div className="studio-top-actions"><a href="/" target="_blank" rel="noreferrer"><Eye/>查看网站</a><form action="/api/auth/logout" method="post"><input type="hidden" name="csrf" value={csrfToken}/><input type="hidden" name="returnTo" value="/"/><button type="submit">退出登录</button></form></div></header>
     <Tabs defaultValue={initialTab}><TabsList variant="line" className="studio-tabs"><TabsTrigger value="series">摄影</TabsTrigger><TabsTrigger value="essays">随笔</TabsTrigger><TabsTrigger value="favorites">收藏</TabsTrigger><TabsTrigger value="about">关于</TabsTrigger><TabsTrigger value="copy">首页与导航</TabsTrigger><TabsTrigger value="media">媒体库</TabsTrigger><TabsTrigger value="sync">同步冲突</TabsTrigger></TabsList>

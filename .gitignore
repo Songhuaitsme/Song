@@ -47,6 +47,7 @@ next-env.d.ts
 /work/
 /var/
 /media-source/
+/图片/
 /legacy/
 /.env.local
 *.tsbuildinfo
