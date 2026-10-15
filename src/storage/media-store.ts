@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { getDatabase } from "@/backend/content/content-store";
 import type { AccessLevel, MediaAsset } from "@/shared/content-model";
+import type { DirectUploadTicket } from "./direct-upload";
 
 const allowedMime = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const assetUrl = (key:string) => `/api/assets/${key}`;
@@ -8,7 +9,7 @@ export function validObjectKey(key:string){return Boolean(key)&&!key.split("/").
 function extension(file:File){return file.name.split(".").pop()?.replace(/[^a-z0-9]/gi,"").toLowerCase()||"jpg";}
 async function checksum(buffer:ArrayBuffer){const hash=await crypto.subtle.digest("SHA-256",buffer);return [...new Uint8Array(hash)].map(value=>value.toString(16).padStart(2,"0")).join("");}
 export async function beginMultipart(fileName:string,mimeType:string){if(!env.BUCKET)throw new Error("图片存储暂时不可用");const id=crypto.randomUUID(),ext=fileName.split(".").pop()?.replace(/[^a-z0-9]/gi,"").toLowerCase()||"jpg",originalKey=`media/original/${id}.${ext}`,displayKey=`media/display/${id}.webp`;const [original,display]=await Promise.all([env.BUCKET.createMultipartUpload(originalKey,{httpMetadata:{contentType:mimeType,cacheControl:"private, no-store"}}),env.BUCKET.createMultipartUpload(displayKey,{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"}})]);return{id,originalKey,displayKey,originalUploadId:original.uploadId,displayUploadId:display.uploadId};}
-export async function uploadMultipartPart(key:string,uploadId:string,partNumber:number,body:ArrayBuffer){if(!env.BUCKET||!validObjectKey(key))throw new Error("图片存储暂时不可用");return env.BUCKET.resumeMultipartUpload(key,uploadId).uploadPart(partNumber,body);}
+export async function uploadMultipartPart(key:string,uploadId:string,partNumber:number,body:ArrayBuffer|ReadableStream<Uint8Array>){if(!env.BUCKET||!validObjectKey(key))throw new Error("图片存储暂时不可用");return env.BUCKET.resumeMultipartUpload(key,uploadId).uploadPart(partNumber,body);}
 export async function finishMultipart(input:{id:string;originalKey:string;displayKey:string;originalUploadId:string;displayUploadId:string;originalParts:R2UploadedPart[];displayParts:R2UploadedPart[];fileName:string;mimeType:string;checksum:string;size:number;width:number;height:number;access?:AccessLevel;assignment?:string}){if(!env.BUCKET)throw new Error("图片存储暂时不可用");await env.BUCKET.resumeMultipartUpload(input.originalKey,input.originalUploadId).complete(input.originalParts);try{await env.BUCKET.resumeMultipartUpload(input.displayKey,input.displayUploadId).complete(input.displayParts);}catch(error){await env.BUCKET.delete(input.originalKey);throw error;}const db=getDatabase();if(!db)throw new Error("数据库暂时不可用");const stamp=Date.now();await db.prepare("INSERT OR IGNORE INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)").bind(input.id,input.originalKey,input.displayKey,assetUrl(input.originalKey),assetUrl(input.displayKey),input.fileName,input.mimeType,input.checksum,"",input.size,input.width,input.height,input.access??"private",input.assignment??"unassigned",stamp,stamp).run();return{id:input.id,imageUrl:assetUrl(input.displayKey),originalUrl:assetUrl(input.originalKey)};}
 
 export async function storeMedia(input:{original:File;display:File;width:number;height:number;access?:AccessLevel;assignment?:string}){
@@ -18,12 +19,18 @@ export async function storeMedia(input:{original:File;display:File;width:number;
   if(!allowedMime.has(input.original.type))throw new Error("仅支持 JPEG、PNG 或 WebP 图片");
   const id=crypto.randomUUID(),originalKey=`media/original/${id}.${extension(input.original)}`,displayKey=`media/display/${id}.webp`;
   const originalBuffer=await input.original.arrayBuffer(),displayBuffer=await input.display.arrayBuffer();
-  await env.BUCKET.put(originalKey,originalBuffer,{httpMetadata:{contentType:input.original.type,cacheControl:"private, no-store"}});
-  try{await env.BUCKET.put(displayKey,displayBuffer,{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"}});}catch(error){await env.BUCKET.delete(originalKey);throw error;}
+  const digest = await checksum(originalBuffer);
+  const stored = await Promise.allSettled([
+    env.BUCKET.put(originalKey,originalBuffer,{httpMetadata:{contentType:input.original.type,cacheControl:"private, no-store"}}),
+    env.BUCKET.put(displayKey,displayBuffer,{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"}}),
+  ]);
+  const failed = stored.find(result=>result.status==="rejected");
+  if(failed?.status==="rejected"){await env.BUCKET.delete([originalKey,displayKey]);throw failed.reason;}
   const stamp=Date.now(),access=input.access??"private",assignment=input.assignment??"unassigned",db=getDatabase();
   if(!db){await env.BUCKET.delete([originalKey,displayKey]);throw new Error("数据库暂时不可用");}
-  await db.prepare("INSERT INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)").bind(id,originalKey,displayKey,assetUrl(originalKey),assetUrl(displayKey),input.original.name,input.original.type,await checksum(originalBuffer),"",input.original.size,input.width,input.height,access,assignment,stamp,stamp).run();
-  return{id,imageUrl:assetUrl(displayKey),originalUrl:assetUrl(originalKey),checksum:await checksum(originalBuffer)};
+  try { await db.prepare("INSERT INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)").bind(id,originalKey,displayKey,assetUrl(originalKey),assetUrl(displayKey),input.original.name,input.original.type,digest,"",input.original.size,input.width,input.height,access,assignment,stamp,stamp).run(); }
+  catch(error){await env.BUCKET.delete([originalKey,displayKey]);throw error;}
+  return{id,imageUrl:assetUrl(displayKey),originalUrl:assetUrl(originalKey),checksum:digest};
 }
 
 export async function listMedia(includeDeleted=false):Promise<MediaAsset[]>{
@@ -32,4 +39,18 @@ export async function listMedia(includeDeleted=false):Promise<MediaAsset[]>{
 }
 
 export async function getMediaObject(key:string){if(!env.BUCKET||!validObjectKey(key))return null;return env.BUCKET.get(key);}
+export async function finishDirectUpload(input: DirectUploadTicket) {
+  const bucket = env.BUCKET, db = getDatabase();
+  if (!bucket || !db) throw new Error("图片存储暂时不可用");
+  const [original, display] = await Promise.all([bucket.get(input.originalKey), bucket.get(input.displayKey)]);
+  if (!original || !display) throw new Error("图片尚未上传完成，请重试");
+  const [originalDigest, displayDigest] = await Promise.all([original.arrayBuffer().then(checksum), display.arrayBuffer().then(checksum)]);
+  if (original.size !== input.size || display.size !== input.displaySize || originalDigest !== input.checksum || displayDigest !== input.displayChecksum || original.httpMetadata?.contentType !== input.mimeType || display.httpMetadata?.contentType !== "image/webp") {
+    await bucket.delete([input.originalKey, input.displayKey]);
+    throw new Error("图片校验失败，请重新上传");
+  }
+  const stamp = Date.now();
+  await db.prepare("INSERT OR IGNORE INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)").bind(input.id,input.originalKey,input.displayKey,assetUrl(input.originalKey),assetUrl(input.displayKey),input.fileName,input.mimeType,input.checksum,"",input.size,input.width,input.height,"private",input.assignment,stamp,stamp).run();
+  return { id: input.id, imageUrl: assetUrl(input.displayKey), originalUrl: assetUrl(input.originalKey) };
+}
 export async function putSyncedObject(key:string,body:ArrayBuffer,contentType:string){if(!env.BUCKET||!validObjectKey(key))throw new Error("图片存储暂时不可用");await env.BUCKET.put(key,body,{httpMetadata:{contentType,cacheControl:"private, no-store"}});}

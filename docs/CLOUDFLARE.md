@@ -43,6 +43,22 @@ npm run deploy:cloudflare
 已存在的存储桶无需重复创建。图片通过网站的 `/api/assets/` 接口访问，
 由网站执行访问权限检查；不需要为存储桶开启公共访问。
 
+### 浏览器直传
+
+浏览器可直接上传到 R2，再由网站校验文件内容并保存媒体记录，避免大文件经过网站中转。
+未配置专用密钥时，自动使用原有上传方式。
+
+1. 在 R2 概述右侧的帐户详细信息中选择 API 令牌旁的管理。
+2. 创建用户 API 令牌，授予对象读写权限，范围只选 `song-media`。
+3. 在 Windows 项目目录运行 `npm run setup:r2-direct`，
+   按提示分别粘贴 Access Key ID 和 Secret Access Key。输入隐藏，脚本直接写入 Worker 的加密环境变量，不写入项目文件。
+4. 运行 `npx wrangler r2 bucket cors set song-media --file r2-cors.json --config wrangler.cloudflare.jsonc --force`，允许网站发起直传请求。
+5. 发布最新版代码并刷新网站。
+
+存储桶保持私有。上传地址仅对随机生成的新文件有效，有效期 10 分钟，
+凭证绑定文件类型、大小、校验值和归属信息；服务端验证原图与展示图后才登记媒体。
+以后更换网站域名时，同时更新 `r2-cors.json` 中允许的来源。
+
 ## 管理员和同步密钥
 
 在 Worker 设置中添加加密环境变量，或在本机运行以下命令并按提示输入值：

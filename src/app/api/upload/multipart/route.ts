@@ -40,8 +40,8 @@ export async function PUT(request: Request) {
     const key = query.get("key") ?? "";
     const uploadId = query.get("uploadId") ?? "";
     const partNumber = Number(query.get("partNumber"));
-    if (!key || !uploadId || !Number.isInteger(partNumber) || partNumber < 1) throw new Error("分片参数无效");
-    return Response.json(await uploadMultipartPart(key, uploadId, partNumber, await request.arrayBuffer()));
+    if (!key || !uploadId || !Number.isInteger(partNumber) || partNumber < 1 || !request.body) throw new Error("分片参数无效");
+    return Response.json(await uploadMultipartPart(key, uploadId, partNumber, request.body));
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "分片上传失败" }, { status: 400 });
   }
