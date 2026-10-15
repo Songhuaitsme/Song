@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "song",
+  "account_id": "92c143b104fca6981f7219a50d672889",
   "main": "./build/sites-worker.ts",
   "compatibility_date": "2026-05-15",
   "compatibility_flags": ["nodejs_compat"],
@@ -12,11 +13,8 @@
     {
       "binding": "DB",
       "database_name": "song-db",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_id": "e211cf9d-14eb-4fed-92e8-5349421c1613",
       "migrations_dir": "drizzle"
     }
-  ],
-  "r2_buckets": [
-    { "binding": "BUCKET", "bucket_name": "song-media" }
   ]
 }
