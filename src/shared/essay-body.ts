@@ -2,7 +2,7 @@ export type EssayBlock = { type: "text"; text: string } | { type: "image"; url: 
 
 const imagePattern = /^!\[([^\]\n]*)\]\(([^\s)]+)\)$/;
 function allowedImageUrl(url: string): boolean {
-  return /^\/api\/assets\/uploads\/display\/[a-zA-Z0-9-]+\.webp$/.test(url);
+  return /^\/api\/assets\/(?:uploads|media)\/display\/[a-zA-Z0-9-]+\.webp$/.test(url);
 }
 export function parseEssayBody(body: string): EssayBlock[] {
   const blocks: EssayBlock[] = [];

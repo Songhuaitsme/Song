@@ -27,6 +27,26 @@ const { visitorContent } = await import(await loadSource("@/shared/content-acces
 const { defaultContent } = await import(await loadSource("@/shared/content-model"));
 const store = await import(await loadSource("@/backend/content/content-store"));
 
+test("uploaded essay images inherit the published essay access while unassigned media stays private", async () => {
+  const url = "/api/assets/media/display/64780591-e04b-4bdb-b12f-13696e701cd2.webp";
+  globalThis.__songAccessTestEnv.DB = {
+    prepare() { return { bind() { return this; } }; },
+    async batch() {
+      return [
+        { results: [] }, { results: [] },
+        { results: [{ access: "public", body: `A photo\n\n![](${url})` }] },
+        { results: [{ access: "private" }] },
+      ];
+    },
+  };
+  try {
+    assert.equal(await store.getAssetAccess(url), "public");
+    assert.equal(await store.getAssetAccess("/api/assets/media/display/unassigned.webp"), "private");
+  } finally {
+    delete globalThis.__songAccessTestEnv.DB;
+  }
+});
+
 function fixture() {
   const result = structuredClone(defaultContent);
   for (const key of ["series", "essays", "favorites"]) {
