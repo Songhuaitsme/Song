@@ -1,5 +1,7 @@
 # 发布与回滚
 
+如需部署到自己的 Cloudflare 账号并连接 GitHub 自动部署，请按 [Cloudflare Workers 部署](CLOUDFLARE.md) 操作。下面的流程适用于原有 Sites 托管。
+
 发布前运行：
 
 1. `npm run backup -- --production`
