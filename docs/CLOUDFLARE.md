@@ -32,18 +32,16 @@ npm run deploy:cloudflare
 
 ## 启用图片上传
 
-当前按先上线公开页面的方式部署，尚未绑定 R2。已有 `public/photos` 图片可正常访问，
-后台上传新图片需先在 Cloudflare 控制台开通 R2，然后运行：
+生产配置已声明 `BUCKET` 绑定，指向私有存储桶 `song-media`。
+在新账号首次部署时，先在 Cloudflare 控制台开通 R2，再创建存储桶并发布：
 
 ```sh
-npx wrangler r2 bucket create song-media
+npx wrangler r2 bucket create song-media --config wrangler.cloudflare.jsonc
+npm run deploy:cloudflare
 ```
 
-在 `wrangler.cloudflare.jsonc` 中添加下面的顶层字段，再重新发布：
-
-```json
-"r2_buckets": [{ "binding": "BUCKET", "bucket_name": "song-media" }]
-```
+已存在的存储桶无需重复创建。图片通过网站的 `/api/assets/` 接口访问，
+由网站执行访问权限检查；不需要为存储桶开启公共访问。
 
 ## 管理员和同步密钥
 

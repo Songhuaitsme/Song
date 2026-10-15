@@ -16,5 +16,8 @@
       "database_id": "e211cf9d-14eb-4fed-92e8-5349421c1613",
       "migrations_dir": "drizzle"
     }
+  ],
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "song-media" }
   ]
 }
