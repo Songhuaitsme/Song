@@ -59,6 +59,10 @@ npm run deploy:cloudflare
 凭证绑定文件类型、大小、校验值和归属信息；服务端验证原图与展示图后才登记媒体。
 以后更换网站域名时，同时更新 `r2-cors.json` 中允许的来源。
 
+如果 Windows 系统代理拖慢了 R2 上传，在确认 R2 可以直连后，可运行
+`powershell -NoProfile -File scripts/r2-proxy-exception.ps1`，只为本项目的 R2 存储域名添加代理例外。
+脚本先将原规则备份到被 Git 忽略的 `var/`；运行同一命令并加上 `-Restore` 可移除这条例外。
+
 ## 管理员和同步密钥
 
 在 Worker 设置中添加加密环境变量，或在本机运行以下命令并按提示输入值：
