@@ -1,8 +1,8 @@
 import { cache } from "react";
 import { env } from "cloudflare:workers";
-import { siteConfig } from "@/config/site";
 import { essayImageUrls } from "@/shared/essay-body";
-import { defaultSiteCopy, validateSiteCopy, type SiteCopy } from "@/shared/site-copy";
+import { visitorContent } from "@/shared/content-access";
+import { defaultSiteCopy, validateSiteCopy } from "@/shared/site-copy";
 import { defaultContent, defaultAbout, type AboutContent, type AccessLevel, type Essay, type Favorite, type Photo, type Series, type SiteContent } from "@/shared/content-model";
 
 export type Entity = "series" | "photo" | "essay" | "favorite";
@@ -35,16 +35,16 @@ async function bootstrap(db:D1Database){
   await db.batch(statements);
 }
 
-function fallbackContent(includePrivate:boolean):SiteContent{const cloned=structuredClone(defaultContent);return includePrivate?cloned:{...cloned,series:cloned.series.filter(x=>x.access==="public"),essays:cloned.essays.filter(x=>x.access==="public"),favorites:cloned.favorites.filter(x=>x.access==="public")};}
+function fallbackContent(includePrivate:boolean):SiteContent{const cloned=structuredClone(defaultContent);return includePrivate?cloned:visitorContent(cloned);}
 const syncFields=(r:Record<string,unknown>)=>({version:Number(r.version??1),updatedAt:Number(r.updated_at??0),deletedAt:r.deleted_at==null?null:Number(r.deleted_at)});
 
 export async function getSiteContent(includePrivate=false):Promise<SiteContent>{
   const db=getDatabase();if(!db)return fallbackContent(includePrivate);
   try{
-    await bootstrap(db);const where=includePrivate?"deleted_at IS NULL":"deleted_at IS NULL AND access='public'";
+    await bootstrap(db);const where=includePrivate?"deleted_at IS NULL":"deleted_at IS NULL AND access IN ('public','private')";
     const [sr,pr,er,fr]=await db.batch([
       db.prepare(`SELECT * FROM series WHERE ${where} ORDER BY sort_order,title`),
-      db.prepare("SELECT p.* FROM photos p JOIN series s ON s.id=p.series_id WHERE p.deleted_at IS NULL AND s.deleted_at IS NULL ORDER BY p.series_id,p.sort_order"),
+      db.prepare(`SELECT p.* FROM photos p JOIN series s ON s.id=p.series_id WHERE p.deleted_at IS NULL AND s.deleted_at IS NULL${includePrivate?"":" AND s.access='public'"} ORDER BY p.series_id,p.sort_order`),
       db.prepare(`SELECT * FROM essays WHERE ${where} ORDER BY sort_order,published_at DESC,title`),
       db.prepare(`SELECT * FROM favorites WHERE ${where} ORDER BY sort_order,title`),
     ]);
@@ -52,7 +52,8 @@ export async function getSiteContent(includePrivate=false):Promise<SiteContent>{
     const series=(sr.results as Record<string,unknown>[]).map((r):Series=>({id:String(r.id),slug:String(r.slug),title:String(r.title),description:String(r.description),coverUrl:String(r.cover_url),access:access(r.access),sortOrder:Number(r.sort_order),photos:photos.filter(p=>p.seriesId===String(r.id)),...syncFields(r)}));
     const essays=(er.results as Record<string,unknown>[]).map((r):Essay=>({id:String(r.id),slug:String(r.slug),title:String(r.title),excerpt:String(r.excerpt),body:String(r.body),access:access(r.access),publishedAt:String(r.published_at),sortOrder:Number(r.sort_order),...syncFields(r)}));
     const favorites=(fr.results as Record<string,unknown>[]).map((r):Favorite=>({id:String(r.id),title:String(r.title),category:String(r.category),note:String(r.note),imageUrl:String(r.image_url),url:String(r.url),access:access(r.access),sortOrder:Number(r.sort_order),...syncFields(r)}));
-    return{series,essays,favorites,about:await getAboutContent(),copy:await getSiteCopy()};
+    const content={series,essays,favorites,about:await getAboutContent(),copy:await getSiteCopy()};
+    return includePrivate?content:visitorContent(content);
   }catch(error){console.error("Content database unavailable",error);return fallbackContent(includePrivate);}
 }
 
@@ -74,6 +75,11 @@ async function getSetting<T>(key:string,fallback:T):Promise<T>{const db=getDatab
 async function saveSetting<T>(key:string,value:T):Promise<T>{const db=getDatabase();if(!db)throw new Error("数据库暂时不可用");await db.prepare("INSERT INTO site_settings (key,value,version,updated_at,deleted_at) VALUES (?,?,1,?,NULL) ON CONFLICT(key) DO UPDATE SET value=excluded.value,version=site_settings.version+1,updated_at=excluded.updated_at,deleted_at=NULL").bind(key,JSON.stringify(value),now()).run();return value}
 export async function getAboutContent(){return validateAboutContent(await getSetting("about_content_v1",defaultAbout)as unknown as Record<string,unknown>)}
 export async function saveAboutContent(record:Record<string,unknown>){return saveSetting("about_content_v1",validateAboutContent(record))}
-const configured=(copy:SiteCopy):SiteCopy=>({...copy,values:{...copy.values,...siteConfig.codeManagedCopy}});
-export const getSiteCopy=cache(async()=>configured(validateSiteCopy(await getSetting("site_copy_v1",defaultSiteCopy)as unknown as Record<string,unknown>)));
-export async function saveSiteCopy(record:Record<string,unknown>){const copy=validateSiteCopy(record);await saveSetting("site_copy_v1",copy);return configured(copy)}
+export const getSiteCopy=cache(async()=>validateSiteCopy(await getSetting("site_copy_v1",defaultSiteCopy)as unknown as Record<string,unknown>));
+export async function saveSiteCopy(record:Record<string,unknown>){const copy=validateSiteCopy(record);await saveSetting("site_copy_v1",copy);return copy}
+export async function saveTextStandards(value:unknown){
+  const current=await getSiteCopy();
+  const validated=validateSiteCopy({...current,textStandards:value});
+  const copy={...validated,textStandards:{...validated.textStandards!,overrides:current.textStandards?.overrides??validated.textStandards!.overrides}};
+  return saveSiteCopy(copy);
+}

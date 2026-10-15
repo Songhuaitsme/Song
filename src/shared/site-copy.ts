@@ -1,9 +1,11 @@
 import { siteConfig } from "@/config/site";
+import { isHexColor, validateTextStandards, type TextStandards } from "@/shared/text-standards";
 
 export const copyFields = [
-  ["global","brand","品牌字样",siteConfig.name],
-  ["global","navSeries","导航：摄影","摄影"],["global","navEssays","导航：随笔","随笔"],["global","navCollection","导航：收藏","收藏"],["global","navAbout","导航：关于",siteConfig.codeManagedCopy.navAbout],["global","studio","工作室入口","工作室"],["global","copyright","页脚版权文字",siteConfig.copyright],
-  ["home","homeImageLabel","封面图片标签","SERIES 01"],["home","homeSeriesLabel","摄影栏目标签","01 / 摄影系列"],["home","enterSeries","进入系列按钮",siteConfig.codeManagedCopy.enterSeries],["home","homeEssayLabel","随笔栏目标签","02 / 随笔"],["home","readEssay","阅读随笔按钮","阅读全文"],["home","homeCollectionLabel","收藏栏目标签","03 / 收藏"],["home","homeCollectionTitle","收藏栏目标题","最近留下的东西"],["home","homeEmptyLabel","空页面标签","SONG / 影像与文字"],["home","homeEmptyTitle","空页面标题","内容正在整理中"],["home","homeEmptyDescription","空页面说明","公开内容会在这里出现。"],
+  ["global","brand","品牌字样",siteConfig.defaultCopy.brand],
+  ["global","navHome","导航：首页","首页"],
+  ["global","navSeries","导航：摄影","摄影"],["global","navEssays","导航：随笔","随笔"],["global","navCollection","导航：收藏","收藏"],["global","navAbout","导航：关于",siteConfig.defaultCopy.navAbout],["global","studio","工作室入口","工作室"],["global","copyright","页脚版权文字",siteConfig.copyright],
+  ["home","homeImageLabel","封面图片标签","SERIES 01"],["home","homeSeriesLabel","摄影栏目标签","01 / 摄影"],["home","enterSeries","进入系列按钮",siteConfig.defaultCopy.enterSeries],["home","homeEssayLabel","随笔栏目标签","02 / 随笔"],["home","readEssay","阅读随笔按钮","阅读全文"],["home","homeCollectionLabel","收藏栏目标签","03 / 收藏"],["home","homeCollectionTitle","收藏栏目标题","最近留下的东西"],["home","homeEmptyLabel","空页面标签","SONG / 影像与文字"],["home","homeEmptyTitle","空页面标题","内容正在整理中"],["home","homeEmptyDescription","空页面说明","公开内容会在这里出现。"],
   ["series","seriesLabel","摄影首图标签","SONFORU / SERIES 01"],["series","readSeries","摄影阅读按钮","READ MORE"],["series","photoUnit","照片数量单位","张照片"],["series","seriesListTitle","摄影列表标题","摄影故事"],["series","seriesListIntro","摄影列表说明","沿着地点、光线与记忆继续观看。"],["series","seriesAuthor","摄影署名","SONG"],["series","seriesNumberLabel","系列编号前缀","SERIES"],["series","photographs","英文照片单位","PHOTOGRAPHS"],["series","seriesEmpty","摄影空列表说明","暂时没有公开的摄影系列。"],
   ["story","storyLabel","系列详情标签","SONFORU / PHOTOGRAPHIC SERIES"],["story","storyLede","系列详情简介标签","摄影系列"],["story","storyEnd","系列结束标签","END"],["story","returnSeries","返回目录按钮","返回系列目录"],["story","photoClose","全屏：关闭","关闭"],["story","photoPrev","全屏：上一张","上一张"],["story","photoNext","全屏：下一张","下一张"],
   ["essays","essayLabel","随笔栏目标签","NOTES / 随笔"],["essays","essayTitle","随笔页标题","写下来的事"],["essays","essayIntro","随笔页说明","关于观看、行走与偶然留下的片段。"],["essays","essayEmpty","随笔空列表说明","暂时没有公开的随笔。"],["essay","essayDetailLabel","随笔详情日期标签","NOTE"],
@@ -16,11 +18,22 @@ export type CopyRow = { id: string; text: string };
 export const fontOptions = [["song","宋体"],["sans","黑体"],["kai","楷体"],["hei","微软雅黑"]] as const;
 export type FontChoice = typeof fontOptions[number][0];
 export const textColors = {black:"#000000",gray:"#777777"} as const;
-export type TextColor = keyof typeof textColors|"inherit";
+export type TextColor = keyof typeof textColors|"inherit"|`#${string}`;
+export function resolveTextColor(color: TextColor | undefined): string | undefined {
+  return !color || color === "inherit" ? undefined : color === "black" || color === "gray" ? textColors[color] : isHexColor(color) ? color : undefined;
+}
+function validColor(color: unknown) { return color === undefined || color === "inherit" || color === "black" || color === "gray" || isHexColor(color); }
 export type TypeSettings = { titleFont:FontChoice; bodyFont:FontChoice; titleSize:number; bodySize:number; titleBold?:boolean; bodyBold?:boolean; titleColor?:TextColor; bodyColor?:TextColor };
 export type TextFormat = { font:FontChoice|"inherit"; size:number; bold:boolean|null; color?:TextColor };
-export type SiteCopy = { textFormats?:Record<string,TextFormat>; typography?:Partial<Record<CopyPage,TypeSettings>>; values: Record<CopyKey,string>; extras: Partial<Record<CopyPage,CopyRow[]>> };
+export type SiteCopy = { textStandards?:TextStandards; textFormats?:Record<string,TextFormat>; typography?:Partial<Record<CopyPage,TypeSettings>>; values: Record<CopyKey,string>; extras: Partial<Record<CopyPage,CopyRow[]>> };
 export const defaultSiteCopy: SiteCopy = { values: Object.fromEntries(copyFields.map((field)=>[field[1],field[3]])) as Record<CopyKey,string>, extras: {} };
+export function validateTextFormat(value: unknown): TextFormat {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("文字格式无效");
+  const t = value as TextFormat;
+  if (!(t.font === "inherit" || fontOptions.some(([font]) => font === t.font)) || !Number.isInteger(t.size) || (t.size !== 0 && (t.size < 10 || t.size > 120)) || (t.bold !== null && typeof t.bold !== "boolean")) throw new Error("文字格式无效：字号为 10–120，0 为默认");
+  if (!validColor(t.color)) throw new Error("字体颜色无效");
+  return { font: t.font, size: t.size, bold: t.bold, ...(t.color ? { color: t.color } : {}) };
+}
 export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
   const values = record.values;
   if (!values || typeof values !== "object" || Array.isArray(values)) throw new Error("页面文字格式无效");
@@ -52,7 +65,7 @@ export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
       const t=setting as TypeSettings;
       if(!fontOptions.some(([key])=>key===t.titleFont)||!fontOptions.some(([key])=>key===t.bodyFont)||!Number.isInteger(t.titleSize)||!Number.isInteger(t.bodySize)||(t.titleSize!==0&&(t.titleSize<12||t.titleSize>120))||(t.bodySize!==0&&(t.bodySize<10||t.bodySize>40)))throw new Error("字号范围：标题 12–120，正文 10–40；0 为默认字号");
       if((t.titleBold!==undefined&&typeof t.titleBold!=="boolean")||(t.bodyBold!==undefined&&typeof t.bodyBold!=="boolean"))throw new Error("加粗设置无效");
-      if([t.titleColor,t.bodyColor].some(color=>color!==undefined&&color!=="inherit"&&color!=="black"&&color!=="gray"))throw new Error("字体颜色无效");
+      if([t.titleColor,t.bodyColor].some(color=>!validColor(color)))throw new Error("字体颜色无效");
       result.typography[page]={...(t.titleColor?{titleColor:t.titleColor}:{}),...(t.bodyColor?{bodyColor:t.bodyColor}:{}),...(t.titleBold!==undefined?{titleBold:t.titleBold}:{}),...(t.bodyBold!==undefined?{bodyBold:t.bodyBold}:{}),titleFont:t.titleFont,bodyFont:t.bodyFont,titleSize:t.titleSize,bodySize:t.bodySize};
     }
   }
@@ -61,11 +74,9 @@ export function validateSiteCopy(record: Record<string,unknown>): SiteCopy {
     const entries=Object.entries(record.textFormats);if(entries.length>5000)throw new Error("文字格式设置过多");result.textFormats={};
     for(const [key,value] of entries){
       if(!key||key.length>400||!/^[-a-zA-Z0-9:|._]+$/.test(key)||!value||typeof value!=="object"||Array.isArray(value))throw new Error("文字格式无效");
-      const t=value as TextFormat;
-      if(!(t.font==="inherit"||fontOptions.some(([font])=>font===t.font))||!Number.isInteger(t.size)||(t.size!==0&&(t.size<10||t.size>120))||(t.bold!==null&&typeof t.bold!=="boolean"))throw new Error("文字格式无效：字号为 10–120，0 为默认");
-      if(t.color!==undefined&&t.color!=="inherit"&&t.color!=="black"&&t.color!=="gray")throw new Error("字体颜色无效");
-      result.textFormats[key]={...(t.color?{color:t.color}:{}),font:t.font,size:t.size,bold:t.bold};
+      result.textFormats[key]=validateTextFormat(value);
     }
   }
+  if (record.textStandards !== undefined) result.textStandards = validateTextStandards(record.textStandards, validateTextFormat);
   return result;
 }

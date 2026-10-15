@@ -12,8 +12,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getAdminSession()) redirect(returnTo);
   return <main className="login-page">
     <a href="/" className="login-wordmark">SONFORU</a>
-    <section className="login-panel">
+    <section className="login-panel" aria-labelledby="login-title">
       <p className="eyebrow">OWNER / SONFORU</p>
+      <h1 id="login-title">工作室</h1>
       <p>登录查看私藏与草稿，并管理摄影、随笔和收藏</p>
       <LoginForm returnTo={returnTo}/>
     </section>

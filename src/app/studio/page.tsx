@@ -11,7 +11,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
   const session = await getAdminSession();
   if (!session) redirect(`/login?returnTo=${encodeURIComponent(safeReturnTo("/studio"))}`);
   const query = await searchParams;
-  const initialTab = query.tab === "essays" || query.tab === "favorites" || query.tab === "about" || query.tab === "copy" || query.tab === "media" || query.tab === "sync" ? query.tab : "series";
+  const initialTab = query.tab === "essays" || query.tab === "favorites" || query.tab === "about" || query.tab === "copy" || query.tab === "media" || query.tab === "sync" || query.tab === "typography" ? query.tab : "series";
   const content = await getSiteContent(true);
   return <StudioDashboard initialContent={content} userName={session.username} csrfToken={session.csrfToken} initialTab={initialTab}/>;
 }

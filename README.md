@@ -4,6 +4,8 @@ Song 是一个单一管理员维护、访客公开浏览的个人摄影与随笔
 
 ## 快速开始
 
+本机已完成依赖安装和初始化后，Windows 用户可以直接双击根目录的 **`启动网站.vbs`**：后台启动开发服务并打开浏览器，保存源码后网页自动更新，无需打开终端。用完双击 **`停止网站.vbs`**。详细说明见 [本地开发](docs/LOCAL_DEVELOPMENT.md)。
+
 ```powershell
 npm install
 npm run setup

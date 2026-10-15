@@ -1,11 +1,10 @@
 import { EditableText } from "@/frontend/components/editable-text";
 import { getSiteCopy } from "@/backend/content/content-store";
 import type { ViewerContext } from "@/backend/auth/admin-auth";
+import { SiteNavigation } from "@/frontend/components/site-navigation";
 
-const links = [["/series", "navSeries"], ["/essays", "navEssays"], ["/collection", "navCollection"], ["/about", "navAbout"]] as const;
 export async function SiteHeader({ viewer, returnTo = "/" }: { viewer: ViewerContext; returnTo?: string }) {
   const {values:c}=await getSiteCopy();
-  const currentPath = returnTo.split(/[?#]/)[0];
   return <>
     {viewer.isAdmin && <aside className="owner-bar" aria-label="主人浏览模式">
       <div><strong>{viewer.ownerMode ? "主人视图" : "访客预览"}</strong><span>{viewer.ownerMode ? "正在显示全部内容" : "只显示访客可见内容"}</span></div>
@@ -15,6 +14,6 @@ export async function SiteHeader({ viewer, returnTo = "/" }: { viewer: ViewerCon
         <form action="/api/auth/logout" method="post"><input type="hidden" name="csrf" value={viewer.csrfToken ?? ""}/><input type="hidden" name="returnTo" value="/"/><button type="submit">退出</button></form>
       </div>
     </aside>}
-    <header className="site-header"><a href="/" className="wordmark" aria-label="首页"><EditableText value={c.brand} field="brand" enabled={viewer.ownerMode} csrf={viewer.csrfToken??""}/></a><nav aria-label="主要导航">{links.filter(([,key])=>c[key]).map(([href, key]) => { const active = currentPath === href || currentPath.startsWith(`${href}/`); return <a key={href} href={href} className="nav-link" aria-current={active ? "page" : undefined}><EditableText value={c[key]} field={key} enabled={viewer.ownerMode} csrf={viewer.csrfToken??""}/></a>; })}{!viewer.isAdmin && c.studio && <a className="nav-studio" href={`/login?returnTo=${encodeURIComponent(returnTo)}`}><EditableText value={c.studio} field="studio" enabled={viewer.ownerMode} csrf={viewer.csrfToken??""}/><span aria-hidden="true">↗</span></a>}</nav></header>
+    <header className="site-header"><a data-text-page="global" data-text-role="brand" href="/" className="wordmark" aria-label="首页"><EditableText textPage="global" textRole="brand" value={c.brand} field="brand" enabled={viewer.ownerMode} csrf={viewer.csrfToken??""}/></a><SiteNavigation copy={c} viewer={viewer} returnTo={returnTo}/></header>
   </>;
 }

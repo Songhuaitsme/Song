@@ -24,7 +24,7 @@ async function sha256(file: File) {
   return Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, "0")).join("");
 }
 
-async function uploadParts(blob: Blob, key: string, uploadId: string, csrfToken: string) {
+async function uploadParts(blob: Blob, key: string, uploadId: string, csrfToken: string, onPart?: (bytes: number) => void) {
   const parts: UploadedPart[] = [];
   for (let offset = 0, partNumber = 1; offset < blob.size; offset += chunkSize, partNumber += 1) {
     const query = new URLSearchParams({ key, uploadId, partNumber: String(partNumber) });
@@ -33,6 +33,7 @@ async function uploadParts(blob: Blob, key: string, uploadId: string, csrfToken:
       headers: { "content-type": "application/octet-stream", "x-csrf-token": csrfToken },
       body: blob.slice(offset, Math.min(blob.size, offset + chunkSize)),
     }));
+    onPart?.(Math.min(chunkSize, blob.size - offset));
   }
   return parts;
 }
@@ -44,6 +45,7 @@ export async function uploadMediaMultipart(input: {
   height: number;
   csrfToken: string;
   assignment?: string;
+  onProgress?: (progress: number) => void;
 }): Promise<UploadedMedia> {
   if (input.original.size > 25 * 1024 * 1024) throw new Error("图片不能超过 25MB");
   const session = await requestJson<UploadSession>("/api/upload/multipart", {
@@ -51,12 +53,18 @@ export async function uploadMediaMultipart(input: {
     headers: { "content-type": "application/json", "x-csrf-token": input.csrfToken },
     body: JSON.stringify({ action: "init", fileName: input.original.name, mimeType: input.original.type, size: input.original.size }),
   });
+  let uploadedBytes = 0;
+  const totalBytes = input.original.size + input.display.size;
+  const onPart = (bytes: number) => {
+    uploadedBytes += bytes;
+    input.onProgress?.(.95 * uploadedBytes / totalBytes);
+  };
   const [checksum, originalParts, displayParts] = await Promise.all([
     sha256(input.original),
-    uploadParts(input.original, session.originalKey, session.originalUploadId, input.csrfToken),
-    uploadParts(input.display, session.displayKey, session.displayUploadId, input.csrfToken),
+    uploadParts(input.original, session.originalKey, session.originalUploadId, input.csrfToken, onPart),
+    uploadParts(input.display, session.displayKey, session.displayUploadId, input.csrfToken, onPart),
   ]);
-  return requestJson<UploadedMedia>("/api/upload/multipart", {
+  const result = await requestJson<UploadedMedia>("/api/upload/multipart", {
     method: "POST",
     headers: { "content-type": "application/json", "x-csrf-token": input.csrfToken },
     body: JSON.stringify({
@@ -73,4 +81,6 @@ export async function uploadMediaMultipart(input: {
       assignment: input.assignment ?? "unassigned",
     }),
   });
+  input.onProgress?.(1);
+  return result;
 }

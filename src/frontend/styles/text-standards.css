@@ -1,0 +1,42 @@
+/* Studio controls are separate from the public site's typography scopes. */
+.standard-fieldset { min-width: 0; border: 0; margin: 0; padding: 0; }
+.standard-toolbar { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin: 24px 0; }
+.standard-toolbar label { display: flex; align-items: center; gap: 12px; }
+.standard-toolbar label { white-space: nowrap; }
+.standard-toolbar label select { width: auto; }
+.standard-toolbar p { width: 100%; margin: 0; color: var(--quiet); font-size: 16px; }
+.standard-page-group > summary { cursor: pointer; font-size: 24px; color: var(--jade); }
+.standard-page-group { display: block; min-width: 0; }
+.standard-row { min-width: 0; padding: 24px 0; border-top: 1px solid var(--line); }
+.standard-row-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.standard-row-heading h3 { margin: 0; font-size: 21px; font-weight: 400; }
+.standard-controls { display: grid; grid-template-columns: 1fr 1fr 1fr 2fr; gap: 20px; }
+.standard-controls > label, .standard-controls > div { display: grid; align-content: start; gap: 8px; font-size: 16px; min-width: 0; }
+.standard-controls small { color: var(--quiet); font-size: 13px; }
+.standard-size-note { margin: 16px 0 12px; color: var(--quiet); font-size: 15px; overflow-wrap: anywhere; }
+.standard-size-note strong { color: var(--ink); }
+.standard-toolbar select, .standard-controls select, .standard-controls input { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.standard-preview { max-width: 100%; overflow: auto; border: 1px solid var(--line); background: var(--paper); }
+.standard-preview iframe { display: block; height: 210px; border: 0; max-width: none; }
+.standard-preview-mobile { max-width: 390px; }
+.standard-cover-example h3 { margin: 0; font-size: 21px; font-weight: 400; }
+.standard-cover-select { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0; font-size: 16px; }
+.standard-cover-select select { max-width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.text-color-picker { display: grid; gap: 10px; min-width: 0; }
+.text-color-swatches { display: flex; gap: 7px; flex-wrap: wrap; }
+.text-color-swatches button, .text-edit-dialog .text-color-swatches button { flex: 0 0 28px; min-width: 28px; width: 28px; height: 28px; min-height: 28px; padding: 0; border: 1px solid #24282440; border-radius: 50%; cursor: pointer; }
+.text-color-swatches button[aria-pressed="true"] { outline: 2px solid var(--jade); outline-offset: 2px; }
+.text-color-custom { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.text-color-custom label { flex: 0 0 auto; font-size: 13px; }
+.text-color-custom input[type="text"] { min-width: 0; width: 110px; font-size: 15px; }
+.text-color-custom input[type="color"] { flex: 0 0 42px; width: 42px; height: 42px; min-height: 42px; padding: 3px; border: 1px solid var(--line); cursor: pointer; }
+.studio-shell .text-color-custom input[type="color"] { min-height: 42px; padding: 3px; }
+.studio-shell .text-color-swatches button[aria-label] { min-width: 28px; min-height: 28px; }
+.text-color-picker .color-inherit { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.text-color-picker .color-inherit input { width: 18px; height: 18px; min-height: 18px; }
+.color-error { color: var(--rust); }
+.inline-format-color { grid-column: 1 / -1; display: grid; gap: 8px; }
+.text-edit-dialog .inline-format-controls .text-color-swatches button { background: var(--paper); color: var(--ink); }
+.text-edit-dialog .inline-format-controls .color-inherit input { width: 18px; height: 18px; min-height: 18px; }
+@media(max-width:1100px) { .standard-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media(max-width:560px) { .standard-controls { grid-template-columns: minmax(0, 1fr); } .standard-row-heading { align-items: flex-start; flex-direction: column; } .standard-page-group > summary { font-size: 22px; } }

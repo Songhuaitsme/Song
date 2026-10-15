@@ -4,7 +4,7 @@ export const siteConfig = {
   description: "以摄影系列、随笔与收藏记录沿途看见的事物。",
   locale: "zh-CN",
   copyright: "Song © 2026",
-  codeManagedCopy: {
+  defaultCopy: {
     brand: "Song",
     navAbout: "Song",
     enterSeries: "More",
