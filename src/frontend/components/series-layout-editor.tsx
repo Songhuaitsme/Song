@@ -5,6 +5,7 @@ import type { Series, SiteContent } from "@/shared/content-model";
 import { automaticLayout, layoutTemplates, layoutIds, layoutPhotos, reconcileLayout, type SeriesLayout, type LayoutGroup } from "@/shared/series-layout";
 import { editLayout, type LayoutCommand, type LayoutDraft } from "@/shared/series-layout-operations";
 import { SeriesStoryPreview } from "./series-narrative-editor";
+import { LayoutWidthControl } from "./layout-width-control";
 import { Button } from "./ui/button";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
@@ -37,7 +38,7 @@ export function SeriesLayoutEditor({ series, copy, busy, history, onHistoryChang
       commit(next, split ? "已按新的章节边界拆分组合，可撤销。保存后生效。" : undefined);
     } catch(error) { const message=error instanceof Error?error.message:"无法调整排版";setStatus(message);toast.error(message); }
   };
-  const updateGroup = (id: string, change: Partial<LayoutGroup>) => { if(layout)commit({...layout,groups:layout.groups.map(group=>group.id===id?{...group,...change}:group)}); };
+  const updateGroup = (id: string, change: Partial<LayoutGroup>, recordHistory = true) => { if(layout)commit({...layout,groups:layout.groups.map(group=>group.id===id?{...group,...change}:group)}, undefined, recordHistory); };
   const undo = (redo = false) => {
     const source=redo?history.future:history.past, destination=redo?history.past:history.future;
     if(!source.length)return;onHistoryChange(redo?{past:[...destination,snapshot()],future:source.slice(0,-1)}:{past:source.slice(0,-1),future:[...destination,snapshot()]});const previous=source[source.length-1];commit(previous.layout,redo?"已重做，保存后生效":"已撤销，保存后生效",false,previous);
@@ -91,6 +92,7 @@ export function SeriesLayoutEditor({ series, copy, busy, history, onHistoryChang
               </div></div>
               <div className="layout-template-choices" role="group" aria-label={`第 ${groupIndex+1} 组模板`}>{layoutTemplates.filter(template=>template.count===group.items.length).map(template=><button key={template.id} type="button" className="layout-template-choice" aria-pressed={template.id===group.template} onClick={()=>updateGroup(group.id,{template:template.id})}><span aria-hidden="true" className={`layout-template-icon template-${template.id}`}>{group.items.map((_,index)=><i key={index}>{index+1}</i>)}</span>{template.label}</button>)}</div>
               <label className="layout-gap-choice">图片间距<NativeSelect aria-label={`第 ${groupIndex+1} 组图片间距`} value={group.gap} onChange={event=>updateGroup(group.id,{gap:event.target.value as LayoutGroup["gap"]})}><NativeSelectOption value="space">留白 · 24px</NativeSelectOption><NativeSelectOption value="seamless">无缝 · 0px</NativeSelectOption></NativeSelect></label>
+              <LayoutWidthControl index={groupIndex+1} value={group.widthPercent} onChange={(widthPercent, recordHistory)=>updateGroup(group.id,{widthPercent},recordHistory)}/>
               <div className="layout-photo-controls">{group.items.map((frame,slot)=>{
                 const photo=series.photos.find(photo=>photo.id===frame.photoId)!;
                 const globalIndex=layout.groups.slice(0,groupIndex).reduce((sum,item)=>sum+item.items.length,0)+slot;

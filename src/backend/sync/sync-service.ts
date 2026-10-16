@@ -4,7 +4,7 @@ import { readLayout } from "@/shared/series-layout";
 import { env } from "cloudflare:workers";
 import { getDatabase } from "@/backend/content/content-store";
 
-export const SYNC_SCHEMA_VERSION = 5;
+export const SYNC_SCHEMA_VERSION = 6;
 export type SyncEntity = "series"|"photos"|"essays"|"favorites"|"site_settings"|"media_assets";
 const tables:SyncEntity[]=["series","photos","essays","favorites","site_settings","media_assets"];
 

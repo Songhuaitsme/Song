@@ -45,6 +45,7 @@ async function load(specifier) {
 const writing = await import(await load('@/shared/series-narrative'));
 const layouts = await import(await load('@/shared/series-layout'));
 const layoutOperations = await import(await load('@/shared/series-layout-operations'));
+const { seriesEditorTarget } = await import(await load('@/shared/studio-series-sections'));
 const store = await import(await load('@/backend/content/content-store'));
 const sync = await import(await load('@/backend/sync/sync-service'));
 const { syncVersionGuard, validateNarrativeSync } = await import(await load('@/backend/sync/narrative-sync'));
@@ -123,7 +124,7 @@ test('API rejects missing admin/CSRF and reports anchor conflicts instead of suc
   try { const response = await request({ action: 'delete', entity: 'photo', id: 'p2' }); assert.equal(response.status, 409); assert.match((await response.json()).error, /章节起点/); } finally { console.error = originalError; }
 });
 test('sync schema 5 exports writing and imports it without losing intro, chapters or closing', async () => {
-  seed(); await save(narrative()); const snapshot = await sync.exportSync(); assert.equal(snapshot.schemaVersion, 5); const exported = snapshot.records.series.find(item => item.id === 'story'); assert.deepEqual(JSON.parse(exported.narrative_json), narrative());
+  seed(); await save(narrative()); const snapshot = await sync.exportSync(); assert.equal(snapshot.schemaVersion, 6); const exported = snapshot.records.series.find(item => item.id === 'story'); assert.deepEqual(JSON.parse(exported.narrative_json), narrative());
   const changed = { ...exported, title: '同步后的标题', narrative_json: JSON.stringify({ ...narrative(), closing: '同步后的收尾' }), version: exported.version + 1 };
   assert.equal((await sync.importSync({ schemaVersion: sync.SYNC_SCHEMA_VERSION, changes: [{ entity: 'series', data: changed, baseVersion: exported.version }] })).applied.length, 1); assert.equal(row().title, changed.title); assert.equal(writing.readNarrative(row().narrative_json).closing, '同步后的收尾');
   await assert.rejects(sync.importSync({ schemaVersion: 3, changes: [] }), /结构版本/);
@@ -192,6 +193,73 @@ const layoutPhotos = () => ['p1','p2','p3','p4'].map(id=>({...photo(id),id,width
 const group = (id,ids,template=ids.length===1?'narrow':ids.length===2?'pair':ids.length===3?'triple':'quad') => ({id,template,gap:'space',items:ids.map(layouts.layoutImage)});
 const manual = () => ({version:1,groups:[group('a',['p1','p2']),group('b',['p3','p4'])]});
 const layoutRecord = layout => ({...record(),layout,photoOrder:(layout?layouts.layoutIds(layout):layoutPhotos().sort((a,b)=>a.sort_order-b.sort_order).map(p=>p.id)).map(id=>({id,version:photo(id).version}))});
+
+test('group width validates and round-trips for every template without changing old layouts',()=>{
+  seed();
+  for(const template of layouts.layoutTemplates)for(const widthPercent of [25,55,70,85,100]){
+    const value={version:1,groups:[{...group('g',layoutPhotos().slice(0,template.count).map(p=>p.id),template.id),widthPercent}]};
+    assert.deepEqual(layouts.readLayout(JSON.stringify(value)),value);
+    assert.equal(layouts.layoutSections(layoutPhotos(),value).sections[0].groups[0].group.widthPercent,widthPercent);
+  }
+  assert.deepEqual(layouts.validateLayout(manual()),manual());
+  for(const widthPercent of [0,24,101,55.5,'70',null,NaN,Infinity]){
+    const value=manual();value.groups[0].widthPercent=widthPercent;assert.throws(()=>layouts.validateLayout(value),/展示宽度/);
+  }
+});
+
+test('widths follow groups through moves, splitting, merging, chapter splits and photo reconciliation',()=>{
+  seed();const photos=layoutPhotos(),value=manual();value.groups[0].widthPercent=55;value.groups[1].widthPercent=85;
+  const moved=layoutOperations.editLayout(value,{type:'move-group',id:'a',before:2},photos);assert.deepEqual(moved.groups.map(g=>g.widthPercent),[85,55]);
+  const split=layoutOperations.editLayout(value,{type:'split',id:'a'},photos);assert.deepEqual(split.groups.map(g=>g.widthPercent),[55,55,85]);
+  const merged=layoutOperations.editLayout(value,{type:'merge',id:'a'},photos);assert.equal(merged.groups[0].widthPercent,55);
+  const joined=layoutOperations.editLayout(value,{type:'move-photo',id:'p1',groupId:'b',before:0},photos);assert.deepEqual(joined.groups.map(g=>g.widthPercent),[55,85]);
+  const independent=layoutOperations.editLayout(value,{type:'move-photo',id:'p1',before:1},photos);assert.deepEqual(independent.groups.map(g=>g.widthPercent),[55,55,85]);
+  const chapters=layouts.reconcileLayout(value,photos,narrative('p2').chapters);assert.deepEqual(chapters.groups.map(g=>g.widthPercent),[55,55,85]);
+  const afterDelete=layouts.reconcileLayout(value,photos.slice(1));assert.equal(afterDelete.groups[0].widthPercent,55);
+  const afterAdd=layouts.reconcileLayout(value,[...photos,{id:'new',width:100,height:100}]);assert.equal(afterAdd.groups.at(-1).widthPercent,undefined);
+  assert.equal(value.groups[0].items.length,2);
+});
+
+test('width save is version guarded, preserves captions, and old series requests retain layout',async()=>{
+  seed();const value=manual();value.groups[0].widthPercent=70;
+  const beforePhoto=photo('p1');await store.upsertEntity('series',layoutRecord(value));assert.deepEqual(JSON.parse(row().layout_json),value);assert.equal(photo('p1').caption,beforePhoto.caption);
+  await store.upsertEntity('series',{...record(),title:'只改系列标题'});assert.equal(JSON.parse(row().layout_json).groups[0].widthPercent,70);
+  const before=row();await assert.rejects(store.upsertEntity('series',{...layoutRecord(value),version:1}),/已更新/);assert.deepEqual(row(),before);
+  const bad=manual();bad.groups[0].widthPercent=101;const response=await request({action:'upsert',entity:'series',record:layoutRecord(bad)});assert.equal(response.status,400);assert.deepEqual(row(),before);
+});
+
+test('widths survive sync, grouped conflict resolution and backup restoration; old sync is rejected',async()=>{
+  seed();const value=manual();value.groups[0].widthPercent=55;await store.upsertEntity('series',layoutRecord(value));
+  const snapshot=await sync.exportSync();assert.equal(snapshot.schemaVersion,6);assert.equal(JSON.parse(snapshot.records.series.find(s=>s.id==='story').layout_json).groups[0].widthPercent,55);
+  const before=row(),incoming=structuredClone(value);incoming.groups[0].widthPercent=85;
+  await assert.rejects(sync.importSync({schemaVersion:5,changes:[]}),/版本不一致/);
+  await sync.importSync({schemaVersion:6,changes:[{entity:'series',data:{...before,layout_json:JSON.stringify(incoming)},baseVersion:before.version-1}]});
+  const [conflict]=await sync.listConflicts();await sync.resolveConflict(conflict.id,'remote');assert.equal(JSON.parse(row().layout_json).groups[0].widthPercent,85);
+  const restored=buildRestoreChanges(snapshot,await sync.exportSync());await sync.importSync(restored);assert.equal(JSON.parse(row().layout_json).groups[0].widthPercent,55);
+});
+
+test('legacy backups preserve matching group widths and reject incompatible groups or photo sets',()=>{
+  const value=manual();value.groups[0].widthPercent=70;
+  const current={schemaVersion:6,records:{series:[{id:'story',layout_json:JSON.stringify(value),version:3}]}};
+  for(const schemaVersion of [3,4,5]){
+    const backup={schemaVersion,records:{series:[{id:'story',layout_json:JSON.stringify(manual())}]}};
+    const result=buildRestoreChanges(backup,current);assert.equal(result.schemaVersion,6);assert.equal(JSON.parse(result.changes[0].data.layout_json).groups[0].widthPercent,70);assert.equal(backup.records.series[0].layout_json,JSON.stringify(manual()));
+    const missing=buildRestoreChanges({schemaVersion,records:{series:[{id:'story'}]}},current);assert.equal(missing.changes[0].data.layout_json,current.records.series[0].layout_json);
+  }
+  for(const change of [v=>v.groups[0].id='other',v=>v.groups[0].items.pop(),v=>[v.groups[0].items[0],v.groups[1].items[0]]=[v.groups[1].items[0],v.groups[0].items[0]]]){
+    const old=manual();change(old);assert.throws(()=>buildRestoreChanges({schemaVersion:5,records:{series:[{id:'story',layout_json:JSON.stringify(old)}]}},current),/无法匹配/);
+  }
+  assert.throws(()=>buildRestoreChanges({schemaVersion:5,records:{series:[{id:'story',layout_json:null}]}},current),/无法匹配/);
+  const reset=buildRestoreChanges({schemaVersion:6,records:{series:[{id:'story',layout_json:JSON.stringify(manual())}]}},current);assert.equal(JSON.parse(reset.changes[0].data.layout_json).groups[0].widthPercent,undefined);
+});
+
+test('deep links resolve the correct collapsed editor section',()=>{
+  const series={id:'story',photos:[{id:'p1'}],narrative:narrative()};
+  for(const target of ['series-text-story','chapter-chapter-one'])assert.equal(seriesEditorTarget(series,target),'text');
+  assert.equal(seriesEditorTarget(series,'series-layout-story'),'layout');
+  for(const target of ['series-photos-story','p1'])assert.equal(seriesEditorTarget(series,target),'photos');
+  assert.equal(seriesEditorTarget(series,'story'),null);assert.equal(seriesEditorTarget(series,'unknown'),null);
+});
 
 test('layout migration is opt-in and automatic conversion preserves original rows and image order',()=>{
   seed();assert.equal(row().layout_json,null);
@@ -268,10 +336,10 @@ test('private layout and photo identifiers never reach visitor content or HTML d
   const owner=await store.getSiteContent(true),visitor=await store.getSiteContent(false);assert.ok(owner.series.find(s=>s.id==='story').layout);const hidden=visitor.series.find(s=>s.id==='story');assert.equal(hidden.layout,undefined);assert.deepEqual(hidden.photos,[]);
 });
 test('sync schema 5 round-trips custom groups, blocks orphan layouts and preserves layouts for old backup requests',async()=>{
-  seed();await store.upsertEntity('series',layoutRecord(manual()));const snapshot=await sync.exportSync(),current=row();assert.equal(snapshot.schemaVersion,5);
+  seed();await store.upsertEntity('series',layoutRecord(manual()));const snapshot=await sync.exportSync(),current=row();assert.equal(snapshot.schemaVersion,6);
   const layout=JSON.parse(current.layout_json);layout.groups[0].gap='seamless';const changed={...current,layout_json:JSON.stringify(layout),version:current.version+1};
-  await sync.importSync({schemaVersion:5,changes:[{entity:'series',data:changed,baseVersion:current.version}]});assert.equal(JSON.parse(row().layout_json).groups[0].gap,'seamless');
-  await assert.rejects(sync.importSync({schemaVersion:5,changes:[{entity:'photos',data:{...photo('p1'),deleted_at:100,version:photo('p1').version+1},baseVersion:photo('p1').version}]}),/排版照片/);assert.equal(photo('p1').deleted_at,null);
+  await sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes:[{entity:'series',data:changed,baseVersion:current.version}]});assert.equal(JSON.parse(row().layout_json).groups[0].gap,'seamless');
+  await assert.rejects(sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes:[{entity:'photos',data:{...photo('p1'),deleted_at:100,version:photo('p1').version+1},baseVersion:photo('p1').version}]}),/排版照片/);assert.equal(photo('p1').deleted_at,null);
   const restored=buildRestoreChanges({schemaVersion:4,records:{series:[{...row(),layout_json:undefined}]}},{schemaVersion:5,records:{series:[row()]}});assert.equal(restored.changes[0].data.layout_json,row().layout_json);
 });
 test('API enforces administrator/CSRF, dirty layouts survive reload, and photo fields are not part of order payloads',async()=>{
@@ -287,10 +355,10 @@ test('related layout/order sync conflicts resolve as one atomic group and refuse
   const layout=JSON.parse(seriesBefore.layout_json);layout.groups.reverse();const ids=layouts.layoutIds(layout);
   const changes=[{entity:'series',data:{...seriesBefore,layout_json:JSON.stringify(layout),version:seriesBefore.version+1},baseVersion:seriesBefore.version},...ids.map((id,index)=>{const p=photosBefore.find(p=>p.id===id);return{entity:'photos',data:{...p,sort_order:index+1,version:p.version+1},baseVersion:p.version};})];
   sqlite.prepare("UPDATE series SET version=version+1,title='本地修改' WHERE id='story'").run();
-  const result=await sync.importSync({schemaVersion:5,changes});assert.equal(result.applied.length,0);assert.equal(result.conflicts.length,5);
+  const result=await sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes});assert.equal(result.applied.length,0);assert.equal(result.conflicts.length,5);
   const conflicts=await sync.listConflicts();assert.ok(conflicts.every(c=>c.groupCount===5));assert.equal(conflicts[0].recordId,conflicts[0].record_id);
   await sync.resolveConflict(conflicts[0].id,'remote');assert.deepEqual(layouts.layoutIds(JSON.parse(row().layout_json)),ids);assert.deepEqual(sqlite.prepare("SELECT id FROM photos WHERE series_id='story' ORDER BY sort_order").all().map(p=>p.id),ids);assert.equal((await sync.listConflicts()).length,0);
-  const before=row();await sync.importSync({schemaVersion:5,changes:[{entity:'series',data:{...before,title:'远端标题'},baseVersion:before.version-1}]});
+  const before=row();await sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes:[{entity:'series',data:{...before,title:'远端标题'},baseVersion:before.version-1}]});
   const [stale]=await sync.listConflicts();sqlite.prepare("UPDATE series SET version=version+1,title='较新的本地内容' WHERE id='story'").run();await assert.rejects(sync.resolveConflict(stale.id,'remote'),/新编辑/);assert.equal(row().title,'较新的本地内容');await sync.resolveConflict(stale.id,'local');assert.equal((await sync.listConflicts()).length,0);
 });
 test('large layout keeps every photo, restricts template capacity and validates the complete order',()=>{

@@ -28,7 +28,7 @@ export function editLayout(layout: SeriesLayout, command: LayoutCommand, photos:
       if (target.items.length >= 4) throw new Error("每组最多四张照片，请先拆分组合");
       target.items.splice(Math.max(0, command.before - (source.id === target.id && index < command.before ? 1 : 0)), 0, item);
     } else {
-      next.groups.splice(command.before, 0, { id: crypto.randomUUID(), template: defaultTemplate([known.get(item.photoId)!]), gap: source.gap, items: [item] });
+      next.groups.splice(command.before, 0, { id: crypto.randomUUID(), template: defaultTemplate([known.get(item.photoId)!]), gap: source.gap, ...(source.widthPercent === undefined ? {} : { widthPercent: source.widthPercent }), items: [item] });
     }
     next.groups = next.groups.filter(group => group.items.length);
     defaults();

@@ -71,6 +71,7 @@
 /* Custom groups share the same album width, captions, and full-screen viewer. */
 .story-layout-block { min-width: 0; container-type: inline-size; --layout-gap: 24px; }
 .story-layout-block.layout-narrow { width: min(100%, 640px); margin-inline: auto; }
+.story-layout-block.layout-custom-width { width: var(--layout-width); margin-inline: auto; }
 .layout-gap-seamless { --layout-gap: 0px; }
 .story-layout-visual { display: grid; grid-template-columns: var(--layout-columns); gap: var(--layout-gap); align-items: start; }
 .story-layout-visual .story-image-button { aspect-ratio: var(--photo-ratio); }
@@ -86,7 +87,7 @@
 .story-layout-caption { display: flex; flex-direction: column-reverse; gap: 6px; min-width: 0; }
 .story-layout-caption .story-photo-caption { margin: 0; }
 @media (max-width: 767px) {
-  .story-layout-block.layout-narrow { width: 100%; }
+  .story-layout-block.layout-narrow, .story-layout-block.layout-custom-width { width: 100%; }
   .story-layout-visual, .layout-mosaic .story-layout-visual { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 32px; aspect-ratio: auto; }
   .story-layout-block.layout-mosaic .story-photo { height: auto; grid-column: auto; grid-row: auto; }
   .story-layout-visual .story-image-button { height: auto; aspect-ratio: var(--photo-ratio); }

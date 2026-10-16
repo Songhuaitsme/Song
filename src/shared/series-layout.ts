@@ -14,7 +14,7 @@ export const layoutTemplates = [
 ] as const;
 export type LayoutTemplate = typeof layoutTemplates[number]["id"];
 export type LayoutImage = { photoId: string; fit: "contain" | "cover"; x: number; y: number };
-export type LayoutGroup = { id: string; template: LayoutTemplate; gap: "space" | "seamless"; items: LayoutImage[] };
+export type LayoutGroup = { id: string; template: LayoutTemplate; gap: "space" | "seamless"; widthPercent?: number; items: LayoutImage[] };
 export type SeriesLayout = { version: 1; groups: LayoutGroup[] };
 export class LayoutInputError extends Error { status = 400; }
 type LayoutPhoto = { id: string; width: number; height: number };
@@ -40,13 +40,14 @@ export function validateLayout(value: unknown): SeriesLayout | null {
     groupIds.add(group.id);
     const template = layoutTemplates.find(item => item.id === group.template);
     if (!template || !Array.isArray(group.items) || group.items.length !== template.count || !["space", "seamless"].includes(group.gap)) throw new LayoutInputError("模板、照片数量或间距不匹配");
+    if (group.widthPercent !== undefined && (!Number.isInteger(group.widthPercent) || group.widthPercent < 25 || group.widthPercent > 100)) throw new LayoutInputError("组图展示宽度必须是 25～100 的整数百分比");
     const items = group.items.map((item): LayoutImage => {
       if (!item || !identifier(item.photoId) || photoIds.has(item.photoId)) throw new LayoutInputError("排版包含重复或无效的照片");
       photoIds.add(item.photoId);
       if (!["contain", "cover"].includes(item.fit) || !Number.isFinite(item.x) || !Number.isFinite(item.y) || item.x < 0 || item.x > 100 || item.y < 0 || item.y > 100) throw new LayoutInputError("照片显示方式或取景位置无效");
       return { photoId: item.photoId, fit: item.fit, x: item.x, y: item.y };
     });
-    return { id: group.id, template: group.template, gap: group.gap, items };
+    return { id: group.id, template: group.template, gap: group.gap, ...(group.widthPercent === undefined ? {} : { widthPercent: group.widthPercent }), items };
   });
   return { version: 1, groups };
 }
