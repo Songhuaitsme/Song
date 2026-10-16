@@ -4,6 +4,7 @@
   --story-row-gap: 64px;
   --story-image-gap: 24px;
 }
+.story-editorial .story-hero { width: var(--story-width); }
 
 .story-editorial .story-lede { width: min(680px, var(--story-width)); margin: 0 auto; padding: 64px 0 0; text-align: left; }
 .story-lede-label { margin: 0 0 20px; color: var(--quiet); font-size: 16px; letter-spacing: .12em; }

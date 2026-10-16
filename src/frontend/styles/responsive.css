@@ -314,7 +314,7 @@ html body main.photography-page[data-copy-page="series"] .series-feature-private
 .photography-page :is(.photography-card-link, .series-feature-link):is(:hover, :focus-visible) .photography-action-arrow { transform: translateX(3px); }
 .photography-page :is(.photography-card-link, .series-feature-link):focus-visible { outline: 2px solid var(--series-action-focus); outline-offset: 4px; }
 .photography-page :is(.photography-card-link, .series-feature-link):active .photography-action-arrow { transform: translateX(1px); }
-.story-editorial .story-hero { width: var(--site-width); margin: 40px auto 0; min-height: clamp(480px, 68svh, 780px); }
+.story-editorial .story-hero { margin: 40px auto 0; min-height: clamp(480px, 68svh, 780px); }
 .story-editorial .story-hero-copy { width: calc(100% - 80px); }
 .story-editorial .story-hero h1 { font-size: clamp(38px, 4.6vw, 68px); }
 .essay-article { width: min(var(--content-essay), var(--site-width)); padding: 40px 0; }
