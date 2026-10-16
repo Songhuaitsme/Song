@@ -297,10 +297,6 @@ html:not([data-text-standards="2"]) .photography-page .photography-card-descript
 .story-editorial .story-hero { width: var(--site-width); margin: 40px auto 0; min-height: clamp(480px, 68svh, 780px); }
 .story-editorial .story-hero-copy { width: calc(100% - 80px); }
 .story-editorial .story-hero h1 { font-size: clamp(38px, 4.6vw, 68px); }
-.story-editorial .story-lede { width: var(--site-width); }
-.story-editorial .photo-story { width: var(--site-width); }
-.story-editorial .photo-story .story-photo-portrait { width: min(100%, 720px); }
-.story-editorial .story-end { width: var(--site-width); }
 .essay-article { width: min(var(--content-essay), var(--site-width)); padding: 40px 0; }
 [data-copy-page="essay"] .essay-article h1 { font-size: 70px; line-height: 1.35; text-wrap: balance; }
 html:not([data-text-standards="2"]) [data-copy-page="essay"] .essay-article h1 { font-size: 70px !important; }

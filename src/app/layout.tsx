@@ -4,6 +4,7 @@ import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import "./globals.css";
 import "../frontend/styles/responsive.css";
+import "../frontend/styles/photo-story.css";
 import "../frontend/styles/text-standards.css";
 import { Toaster } from "@/frontend/components/ui/sonner";
 export const metadata: Metadata = { title: { default: siteConfig.title, template: `%s｜${siteConfig.name}` }, description: siteConfig.description, icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" } };
