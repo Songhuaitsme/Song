@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Photo, Series, SiteContent } from "@/shared/content-model";
 import { emptyNarrative, orderedChapters, type SeriesNarrative } from "@/shared/series-narrative";
+import { layoutPhotos } from "@/shared/series-layout";
 import type { ChapterResolution } from "@/backend/content/series-narrative-store";
 import { SeriesStoryContent } from "./series-story-content";
 import { Button } from "./ui/button";
@@ -14,17 +15,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const count = (text: string) => Array.from(text.trim()).length;
 
-function SeriesStoryPreview({ series, copy }: { series: Series; copy: SiteContent["copy"] }) {
+export function SeriesStoryPreview({ series, copy }: { series: Series; copy: SiteContent["copy"] }) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [frameDocument, setFrameDocument] = useState<Document | null>(null);
+  const viewport = useRef<HTMLDivElement>(null);
+  const [viewportWidth, setViewportWidth] = useState(1200);
+  useEffect(() => {
+    const element=viewport.current;if(!element)return;
+    const observer=new ResizeObserver(entries=>setViewportWidth(entries[0].contentRect.width));observer.observe(element);return()=>observer.disconnect();
+  }, []);
+  const frameWidth=device==="mobile"?390:1200, scale=Math.min(1,Math.max(1,viewportWidth)/frameWidth);
   return <div className="series-story-preview">
     <div className="series-preview-tools" role="group" aria-label="预览设备">
       <Button size="sm" variant="outline" aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>桌面</Button>
       <Button size="sm" variant="outline" aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>手机</Button>
       <span>预览包含未保存的输入，保存后才更新网站。</span>
     </div>
-    <div className="series-preview-viewport">
-      <iframe title="摄影系列图文预览" className="series-preview-frame" style={{ width: device === "mobile" ? 390 : 1200 }} srcDoc={'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"></head><body></body></html>'} onLoad={event => {
+    <div ref={viewport} className="series-preview-viewport" style={{height:480,overflow:"hidden"}}>
+      <iframe title="摄影系列图文预览" className="series-preview-frame" style={{ width: frameWidth, height:480/scale, transform:`scale(${scale})`,transformOrigin:"top left",margin:0 }} srcDoc={'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"></head><body></body></html>'} onLoad={event => {
         const frame = event.currentTarget.contentDocument;
         if (!frame) return;
         const base = frame.createElement("base"); base.href = document.baseURI; frame.head.appendChild(base);
@@ -44,10 +52,11 @@ function SeriesStoryPreview({ series, copy }: { series: Series; copy: SiteConten
   </div>;
 }
 
-export function SeriesNarrativeEditor({ series, copy, busy, onChange, onSave }: {
+export function SeriesNarrativeEditor({ series: originalSeries, copy, busy, onChange, onSave }: {
   series: Series; copy: SiteContent["copy"]; busy: boolean;
   onChange(narrative: SeriesNarrative): void; onSave(): void;
 }) {
+  const series={...originalSeries,photos:layoutPhotos(originalSeries.photos,originalSeries.layout,originalSeries.draftPhotoOrder)};
   const narrative = series.narrative ?? emptyNarrative();
   const [previewOpen, setPreviewOpen] = useState(false);
   const chapters = orderedChapters(narrative, series.photos);
@@ -97,7 +106,7 @@ export function SeriesPhotoDelete({ series, photo, busy, narrativeDirty, onConfi
   const chapters = series.narrative?.chapters ?? [], anchored = chapters.find(chapter => chapter.beforePhotoId === photo.id);
   const candidates = series.photos.filter(item => item.id !== photo.id && !chapters.some(chapter => chapter.beforePhotoId === item.id));
   return <AlertDialog open={open} onOpenChange={value => { if (busy) return; if (value) { setMode(candidates.length ? "move" : "delete"); setReplacement(candidates[0]?.id ?? ""); } setOpen(value); }}>
-    <AlertDialogTrigger asChild><Button variant="ghost" size="sm" disabled={busy || narrativeDirty} title={narrativeDirty ? "请先保存系列文字，再删除照片" : undefined} aria-label="删除照片">删除照片</Button></AlertDialogTrigger>
+    <AlertDialogTrigger asChild><Button variant="ghost" size="sm" disabled={busy || narrativeDirty} title={narrativeDirty ? "请先保存系列文字和排版，再删除照片" : undefined} aria-label="删除照片">删除照片</Button></AlertDialogTrigger>
     <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{anchored ? "这张照片是章节起点" : "确认删除照片？"}</AlertDialogTitle><AlertDialogDescription>{anchored ? `章节“${anchored.title || "未命名章节"}”从这张照片开始。请选择新的起始照片，或明确删除该章节。` : "删除照片后无法从网站后台恢复。"}</AlertDialogDescription></AlertDialogHeader>
       {anchored && <div className="series-photo-delete-resolution"><label>章节处理方式<NativeSelect aria-label="章节处理方式" value={mode} onChange={event => setMode(event.target.value)}>{!!candidates.length && <NativeSelectOption value="move">保留章节，选择新的起始照片</NativeSelectOption>}<NativeSelectOption value="delete">同时删除这个章节的标题与正文</NativeSelectOption></NativeSelect></label>{mode === "move" && <label>新的起始照片<NativeSelect aria-label="新的章节起始照片" value={replacement} onChange={event => setReplacement(event.target.value)}>{candidates.map(item => <NativeSelectOption value={item.id} key={item.id}>第 {series.photos.findIndex(photo => photo.id === item.id) + 1} 张 · {item.alt || "摄影作品"}</NativeSelectOption>)}</NativeSelect></label>}</div>}
       <AlertDialogFooter><AlertDialogCancel disabled={busy}>取消</AlertDialogCancel><AlertDialogAction disabled={busy || (!!anchored && mode === "move" && !replacement)} onClick={async event => { event.preventDefault(); const ok = await onConfirm(anchored ? { beforePhotoId: mode === "delete" ? null : replacement, version: series.version } : undefined); if (ok) setOpen(false); }}>{busy ? "正在删除…" : anchored && mode === "delete" ? "删除照片及章节" : "删除照片"}</AlertDialogAction></AlertDialogFooter>

@@ -1,9 +1,10 @@
 import { validateNarrativeSync, syncVersionGuard, type SyncChange } from "./narrative-sync";
 import { readNarrative } from "@/shared/series-narrative";
+import { readLayout } from "@/shared/series-layout";
 import { env } from "cloudflare:workers";
 import { getDatabase } from "@/backend/content/content-store";
 
-export const SYNC_SCHEMA_VERSION = 4;
+export const SYNC_SCHEMA_VERSION = 5;
 export type SyncEntity = "series"|"photos"|"essays"|"favorites"|"site_settings"|"media_assets";
 const tables:SyncEntity[]=["series","photos","essays","favorites","site_settings","media_assets"];
 
@@ -35,12 +36,19 @@ export async function importSync(payload:{schemaVersion?:number;changes?:SyncCha
   // Related photo edits stay with a conflicting series, so chapter anchors remain intact.
   let expanded=true;while(expanded){expanded=false;for(const row of staged)if(row.groups.some(group=>blocked.has(group)))for(const group of row.groups)if(!blocked.has(group)){blocked.add(group);expanded=true;}}
   const accepted=staged.filter(row=>!row.conflict&&!row.groups.some(group=>blocked.has(group)));
+  // Opaque conflict IDs share a prefix for one connected series/photo group.
+  // This keeps layout and canonical order resolvable together without mixing runs.
+  const components=new Map<string,Set<string>>();
+  for(const row of staged)if(row.groups.length){const union=new Set(row.groups.flatMap(id=>[...(components.get(id)??[id])]));for(const id of union)components.set(id,union);}
+  const conflictGroups=new Map<string,string>();
   const dependencies=await validateNarrativeSync(db,accepted.map(row=>row.change));
   const statements:D1PreparedStatement[]=[],applied:string[]=[],conflicts:string[]=[];
   if(accepted.length)statements.push(syncVersionGuard(db,[...accepted.map(row=>row.change),...dependencies]));
   for(const row of [...staged].sort((a,b)=>tables.indexOf(table(a.change.entity))-tables.indexOf(table(b.change.entity)))){
     if(row.conflict||row.groups.some(group=>blocked.has(group))){
-      const id=crypto.randomUUID();conflicts.push(id);
+      const component=row.groups.length?[...(components.get(row.groups[0])??row.groups)].sort().join("|"):null;
+      if(component&&!conflictGroups.has(component))conflictGroups.set(component,crypto.randomUUID());
+      const id=(component?conflictGroups.get(component)+":":"")+crypto.randomUUID();conflicts.push(id);
       statements.push(db.prepare("INSERT INTO sync_conflicts (id,entity,record_id,local_version,remote_version,local_data,remote_data,status,created_at,resolved_at) VALUES (?,?,?,?,?,?,?,?,?,NULL)").bind(id,row.change.entity,row.id,Number(row.current?.version??0),Number(row.change.data.version??row.change.baseVersion+1),JSON.stringify(row.current??{}),JSON.stringify(row.change.data),"open",Date.now()));
     }else{statements.push(prepareSyncRow(db,table(row.change.entity),row.change.data));applied.push(`${row.change.entity}:${row.id}`);}
   }
@@ -50,8 +58,8 @@ export async function importSync(payload:{schemaVersion?:number;changes?:SyncCha
 
 function prepareSyncRow(db:D1Database,entity:SyncEntity,d:Record<string,unknown>){
   if(entity==="series"){
-    const present=d.narrative_json!==undefined,json=JSON.stringify(readNarrative(d.narrative_json));
-    return db.prepare("INSERT INTO series (id,slug,title,description,cover_url,access,published,sort_order,narrative_json,version,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,cover_url=excluded.cover_url,access=excluded.access,published=excluded.published,sort_order=excluded.sort_order,narrative_json=CASE WHEN ?=1 THEN excluded.narrative_json ELSE series.narrative_json END,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.slug,d.title,d.description,d.cover_url,d.access,d.published,d.sort_order,json,d.version,d.updated_at,d.deleted_at??null,present?1:0);
+    const present=d.narrative_json!==undefined,json=JSON.stringify(readNarrative(d.narrative_json)),hasLayout=d.layout_json!==undefined,layout=readLayout(d.layout_json);
+    return db.prepare("INSERT INTO series (id,slug,title,description,cover_url,access,published,sort_order,narrative_json,layout_json,version,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,cover_url=excluded.cover_url,access=excluded.access,published=excluded.published,sort_order=excluded.sort_order,narrative_json=CASE WHEN ?=1 THEN excluded.narrative_json ELSE series.narrative_json END,layout_json=CASE WHEN ?=1 THEN excluded.layout_json ELSE series.layout_json END,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.slug,d.title,d.description,d.cover_url,d.access,d.published,d.sort_order,json,layout?JSON.stringify(layout):null,d.version,d.updated_at,d.deleted_at??null,present?1:0,hasLayout?1:0);
   }
   if(entity==="photos")return db.prepare("INSERT INTO photos (id,series_id,image_url,original_url,width,height,alt,caption,location,taken_at,sort_order,version,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET series_id=excluded.series_id,image_url=excluded.image_url,original_url=excluded.original_url,width=excluded.width,height=excluded.height,alt=excluded.alt,caption=excluded.caption,location=excluded.location,taken_at=excluded.taken_at,sort_order=excluded.sort_order,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.series_id,d.image_url,d.original_url,d.width,d.height,d.alt,d.caption,d.location,d.taken_at,d.sort_order,d.version,d.updated_at,d.deleted_at??null);
   if(entity==="essays")return db.prepare("INSERT INTO essays (id,slug,title,excerpt,body,access,visibility,status,published_at,sort_order,version,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,excerpt=excluded.excerpt,body=excluded.body,access=excluded.access,visibility=excluded.visibility,status=excluded.status,published_at=excluded.published_at,sort_order=excluded.sort_order,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.slug,d.title,d.excerpt,d.body,d.access,d.visibility,d.status,d.published_at,d.sort_order,d.version,d.updated_at,d.deleted_at??null);
@@ -60,10 +68,26 @@ function prepareSyncRow(db:D1Database,entity:SyncEntity,d:Record<string,unknown>
   return db.prepare("INSERT INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET original_key=excluded.original_key,display_key=excluded.display_key,original_url=excluded.original_url,display_url=excluded.display_url,file_name=excluded.file_name,mime_type=excluded.mime_type,checksum=excluded.checksum,perceptual_hash=excluded.perceptual_hash,size=excluded.size,width=excluded.width,height=excluded.height,access=excluded.access,assignment=excluded.assignment,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.original_key,d.display_key,d.original_url,d.display_url,d.file_name,d.mime_type,d.checksum,d.perceptual_hash,d.size,d.width,d.height,d.access,d.assignment,d.version,d.created_at,d.updated_at,d.deleted_at??null);
 }
 
-export async function listConflicts(){const db=getDatabase();if(!db)return[];const rows=await db.prepare("SELECT * FROM sync_conflicts WHERE status='open' ORDER BY created_at DESC").all<Record<string,unknown>>();return rows.results.map(r=>({...r,local_data:JSON.parse(String(r.local_data)),remote_data:JSON.parse(String(r.remote_data))}));}
+export async function listConflicts(){const db=getDatabase();if(!db)return[];const rows=await db.prepare("SELECT * FROM sync_conflicts WHERE status='open' ORDER BY created_at DESC").all<Record<string,unknown>>();return rows.results.map(r=>({...r,recordId:r.record_id,localVersion:r.local_version,remoteVersion:r.remote_version,localData:JSON.parse(String(r.local_data)),remoteData:JSON.parse(String(r.remote_data)),createdAt:r.created_at,resolvedAt:r.resolved_at,groupCount:String(r.id).includes(":")?rows.results.filter(other=>String(other.id).split(":")[0]===String(r.id).split(":")[0]).length:1,local_data:JSON.parse(String(r.local_data)),remote_data:JSON.parse(String(r.remote_data))}));}
 export async function resolveConflict(id:string,resolution:"local"|"remote"|"manual",manual?:Record<string,unknown>){
+  if(!["local","remote","manual"].includes(resolution))throw new Error("解决方式无效");
   const db=getDatabase();if(!db)return;
   const row=await db.prepare("SELECT * FROM sync_conflicts WHERE id=? AND status='open'").bind(id).first<Record<string,unknown>>();if(!row)throw new Error("冲突不存在或已经处理");
+  if(id.includes(":")){
+    const prefix=id.split(":")[0]+":";
+    const related=await db.prepare("SELECT * FROM sync_conflicts WHERE status='open' AND id LIKE ?").bind(prefix+"%").all<Record<string,unknown>>();
+    if(resolution==="manual"&&related.results.length>1)throw new Error("关联排版冲突请先选择整组版本，再进行手动编辑");
+    const finishes=related.results.map(item=>db.prepare("UPDATE sync_conflicts SET status='resolved',resolved_at=? WHERE id=?").bind(Date.now(),item.id));
+    if(resolution==="local"){await db.batch(finishes);return;}
+    const changes:SyncChange[]=[];
+    for(const item of related.results){const entity=table(String(item.entity));const current=await db.prepare(`SELECT version FROM ${entity} WHERE ${entity==="site_settings"?"key":"id"}=?`).bind(item.record_id).first<{version:number}>();
+      if(Number(current?.version??0)!==Number(item.local_version))throw new Error("冲突记录之后又有新编辑，请保留本地版本并重新同步，避免覆盖新内容");
+      const selected=resolution==="manual"?manual:JSON.parse(String(item.remote_data));if(!selected)throw new Error("请提供合并后的内容");
+      changes.push({entity,data:{...selected,[entity==="site_settings"?"key":"id"]:item.record_id,version:Number(current?.version??0)+1,updated_at:Date.now()},baseVersion:Number(current?.version??0)});
+    }
+    const dependencies=await validateNarrativeSync(db,changes);
+    await db.batch([syncVersionGuard(db,[...changes,...dependencies]),...[...changes].sort((a,b)=>tables.indexOf(table(a.entity))-tables.indexOf(table(b.entity))).map(change=>prepareSyncRow(db,table(change.entity),change.data)),...finishes]);return;
+  }
   const finish=db.prepare("UPDATE sync_conflicts SET status='resolved',resolved_at=? WHERE id=?").bind(Date.now(),id);
   if(resolution==="local"){await finish.run();return;}
   const entity=table(String(row.entity)),selected=resolution==="remote"?JSON.parse(String(row.remote_data)):manual;if(!selected)throw new Error("请提供合并后的内容");

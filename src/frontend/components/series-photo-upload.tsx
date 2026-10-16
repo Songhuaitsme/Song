@@ -7,13 +7,14 @@ import type { Photo, Series, SiteContent } from "@/shared/content-model";
 import { uploadMediaMultipart } from "@/frontend/upload-media";
 import { prepareImageForUpload, formatImageSize, type CompressionMode } from "@/frontend/resize-image";
 import { uploadPhotoBatch, type PhotoUploadItem } from "@/frontend/photo-upload-batch";
+import { seriesPhotoOrder } from "@/shared/series-layout-operations";
 import { Button } from "@/frontend/components/ui/button";
 
 const labels: Record<PhotoUploadItem["state"], string> = {
   waiting: "等待上传", processing: "正在处理", uploading: "正在上传", saving: "正在保存", done: "已加入系列", error: "未完成",
 };
 
-export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, onBusyChange, onPhotoAdded, onCoverChange, onSeriesSaved }: {
+export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, onBusyChange, onPhotoAdded, onCoverChange, onSeriesSaved, onSeriesRefreshed }: {
   series: Series;
   csrfToken: string;
   busy: boolean;
@@ -22,6 +23,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, on
   onPhotoAdded(photo: Photo): void;
   onCoverChange(url: string): void;
   onSeriesSaved?(series: Series): void;
+  onSeriesRefreshed?(series: Series): void;
 }) {
   const [items, setItems] = useState<PhotoUploadItem[]>([]);
   const [running, setRunning] = useState(false);
@@ -34,7 +36,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, on
   async function save(entity: "series" | "photo", record: Series | Photo) {
     const response = await fetch("/api/studio", {
       method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
-      body: JSON.stringify({ action: "upsert", entity, record }),
+      body: JSON.stringify({ action: "upsert", entity, record:entity==="series"&&Object.hasOwn(record,"layout")?{...record,photoOrder:seriesPhotoOrder(record as Series)}:record }),
     });
     const body = await response.json() as { error?: string };
     if (!response.ok) throw new Error(body.error || "保存失败，请重试");
@@ -68,7 +70,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, on
       const added = results.filter(item => item.state === "done");
       const firstPhoto = added[0]?.photo;
       if (!savedSeries.coverUrl && firstPhoto) {
-        try { await save("series", { ...savedSeries, coverUrl: firstPhoto.imageUrl }); onCoverChange(firstPhoto.imageUrl); }
+        try { const latestSeriesResponse=await fetch("/api/studio",{cache:"no-store"});if(!latestSeriesResponse.ok)throw new Error("无法刷新系列");const latestContent=await latestSeriesResponse.json() as SiteContent;const latestSeries=latestContent.series.find(item=>item.id===series.id)!;const coverRecord={...latestSeries};delete coverRecord.layout;await save("series", { ...coverRecord, coverUrl: firstPhoto.imageUrl }); onCoverChange(firstPhoto.imageUrl); }
         catch { setBatchError("照片已保存，但封面未能更新；可以在照片旁点击“设为封面”。"); }
       }
       const errors = results.filter(item => item.state === "error").length;
@@ -78,7 +80,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, on
       const message = error instanceof Error ? error.message : "上传失败，请重试";
       setItems(current => current.map(item => queue.some(queued => queued.id === item.id) && item.state !== "done" ? { ...item, state: "error", error: message } : item));
       setBatchError(message); toast.error(message);
-    } finally { lock.current = false; setRunning(false); onBusyChange(false); }
+    } finally { try {const refreshed=await fetch("/api/studio",{cache:"no-store"});if(refreshed.ok){const content=await refreshed.json() as SiteContent;const fresh=content.series.find(item=>item.id===series.id);if(fresh)onSeriesRefreshed?.(fresh);}}catch{setBatchError("照片已保存，但无法刷新最新排版；请稍后刷新再继续编辑。");} lock.current = false; setRunning(false); onBusyChange(false); }
   }
 
   function chooseFiles(event: React.ChangeEvent<HTMLInputElement>) {

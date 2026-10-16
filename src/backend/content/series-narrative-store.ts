@@ -1,4 +1,6 @@
 import { emptyNarrative, readNarrative, resolveChapterAnchor, validateNarrative } from "@/shared/series-narrative";
+import { readLayout, reconcileLayout, validateLayoutPhotos } from "@/shared/series-layout";
+import { layoutSnapshot, layoutSnapshotGuards, layoutBatch } from "@/backend/content/series-layout-store";
 
 export type ChapterResolution = { beforePhotoId: string | null; version?: number };
 export class NarrativeConflict extends Error { status = 409; }
@@ -9,6 +11,8 @@ export async function narrativeForSave(db: D1Database, seriesId: string, record:
   const rows = await db.prepare("SELECT id FROM photos WHERE series_id=? AND deleted_at IS NULL").bind(seriesId).all<{ id: string }>();
   const photos = new Set(rows.results.map(row => row.id));
   if (narrative.chapters.some(chapter => !photos.has(chapter.beforePhotoId))) throw new Error("章节起始照片必须属于当前系列，请重新选择");
+  const stored = await db.prepare("SELECT layout_json FROM series WHERE id=?").bind(seriesId).first<{layout_json: string | null}>();
+  validateLayoutPhotos(readLayout(stored?.layout_json), rows.results.map(photo => ({...photo,width:0,height:0})), narrative.chapters);
   return narrative;
 }
 
@@ -27,12 +31,17 @@ export async function deletePhotoWithNarrative(db: D1Database, id: string, resol
     narrative = validateNarrative(resolveChapterAnchor(narrative, id, resolution.beforePhotoId));
   }
   const stamp = Date.now();
-  const result = await db.batch([
+  const snapshot = await layoutSnapshot(db, photo.series_id);
+  if (snapshot.series?.version !== photo.version) throw new NarrativeConflict("系列已更新，请刷新后重新确认删除");
+  const previousLayout = readLayout(snapshot.series.layout_json);
+  const layout = previousLayout ? reconcileLayout(previousLayout, snapshot.photos.filter(item => item.id !== id), narrative.chapters) : null;
+  const result = await layoutBatch(db, [
+    ...layoutSnapshotGuards(db, [snapshot]),
     db.prepare("UPDATE photos SET deleted_at=?,updated_at=?,version=version+1 WHERE id=? AND deleted_at IS NULL AND EXISTS(SELECT 1 FROM series WHERE id=? AND version=?)").bind(stamp, stamp, id, photo.series_id, photo.version),
-    db.prepare("UPDATE series SET narrative_json=?,updated_at=?,version=version+1 WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM photos WHERE id=? AND deleted_at=?)").bind(JSON.stringify(narrative), stamp, photo.series_id, photo.version, id, stamp),
+    db.prepare("UPDATE series SET narrative_json=?,layout_json=?,updated_at=?,version=version+1 WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM photos WHERE id=? AND deleted_at=?)").bind(JSON.stringify(narrative), layout ? JSON.stringify(layout) : null, stamp, photo.series_id, photo.version, id, stamp),
   ]);
-  if (!result[0].meta.changes || !result[1].meta.changes) throw new NarrativeConflict("系列已更新，照片未删除，请刷新后重试");
-  return { series: { id: photo.series_id, narrative, version: photo.version + 1, updatedAt: stamp } };
+  if (!result[2].meta.changes || !result[3].meta.changes) throw new NarrativeConflict("系列已更新，照片未删除，请刷新后重试");
+  return { series: { id: photo.series_id, narrative, layout, version: photo.version + 1, updatedAt: stamp } };
 }
 
 export const emptyNarrativeJson = JSON.stringify(emptyNarrative());

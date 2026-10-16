@@ -28,5 +28,5 @@ export async function POST(request: Request) {
     if (body.action === "delete" && body.id) { const result = await deleteEntity(body.entity, body.id, body.chapterResolution); return Response.json({ ok: true, ...result }); }
     if (body.action === "upsert" && body.record) { const result = await upsertEntity(body.entity, body.record); if(formattedCopy)await saveSiteCopy(formattedCopy as unknown as Record<string,unknown>); return Response.json({ ok: true, ...result }); }
     return Response.json({ error: "操作无效" }, { status: 400 });
-  } catch (error) { console.error(error); return Response.json({ error: error instanceof Error ? error.message : "保存失败" }, { status: error instanceof Error && "status" in error && error.status === 409 ? 409 : 500 }); }
+  } catch (error) { console.error(error); return Response.json({ error: error instanceof Error ? error.message : "保存失败" }, { status: error instanceof Error && "status" in error && (error.status === 409 || error.status === 400) ? Number(error.status) : 500 }); }
 }

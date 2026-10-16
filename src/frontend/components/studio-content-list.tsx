@@ -40,7 +40,7 @@ export function StudioContentList<T extends StudioListItem>({ items, savedItems,
   const changeView = (patch: Partial<StudioListView>) => { setView(current => ({ ...current, ...patch, page: patch.page ?? 1 })); setSelected(new Set()); };
   const showItem = (id: string) => {
     const ordered = displayOrder(items);
-    const index = ordered.findIndex(item => item.id === id || ("photos" in item && (item.photos.some(photo => photo.id === id) || id === `series-text-${item.id}` || item.narrative?.chapters.some(chapter => id === `chapter-${chapter.id}`))));
+    const index = ordered.findIndex(item => item.id === id || ("photos" in item && (item.photos.some(photo => photo.id === id) || id === `series-text-${item.id}` || id === `series-layout-${item.id}` || item.narrative?.chapters.some(chapter => id === `chapter-${chapter.id}`))));
     if (index < 0) return;
     setView({ ...defaultStudioView, access: snapshots.has(ordered[index].id) ? "all" : "draft", page: 1 });
     // New drafts have their own filtered position; existing deep links use the complete order.

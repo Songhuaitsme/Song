@@ -1,0 +1,1 @@
+ALTER TABLE `series` ADD `layout_json` text;

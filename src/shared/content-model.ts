@@ -1,14 +1,15 @@
 import { defaultSiteCopy, type SiteCopy } from "@/shared/site-copy";
 import type { SeriesNarrative } from "@/shared/series-narrative";
+import type { SeriesLayout } from "@/shared/series-layout";
 export type SyncFields = { version?: number; updatedAt?: number; deletedAt?: number | null };
 export type Photo = SyncFields & { id: string; seriesId: string; imageUrl: string; originalUrl: string; width: number; height: number; alt: string; caption: string; location: string; takenAt: string; sortOrder: number };
 export type AccessLevel = "draft" | "private" | "public";
-export type Series = SyncFields & { id: string; slug: string; title: string; description: string; coverUrl: string; access: AccessLevel; sortOrder: number; photos: Photo[]; narrative?: SeriesNarrative };
+export type Series = SyncFields & { id: string; slug: string; title: string; description: string; coverUrl: string; access: AccessLevel; sortOrder: number; photos: Photo[]; narrative?: SeriesNarrative; layout?: SeriesLayout | null; draftPhotoOrder?: string[] };
 export type Essay = SyncFields & { id: string; slug: string; title: string; excerpt: string; body: string; access: AccessLevel; publishedAt: string; sortOrder: number };
 export type Favorite = SyncFields & { id: string; title: string; category: string; note: string; imageUrl: string; url: string; access: AccessLevel; sortOrder: number };
 export type AboutContent = { title: string; body: string; note: string };
 export type MediaAsset = SyncFields & { id:string; originalKey:string; displayKey:string; originalUrl:string; displayUrl:string; fileName:string; mimeType:string; checksum:string; perceptualHash:string; size:number; width:number; height:number; access:AccessLevel; assignment:string; createdAt:number };
-export type SyncConflict = { id:string; entity:string; recordId:string; localVersion:number; remoteVersion:number; localData:Record<string,unknown>; remoteData:Record<string,unknown>; status:"open"|"resolved"; createdAt:number; resolvedAt:number|null };
+export type SyncConflict = { id:string; entity:string; recordId:string; localVersion:number; remoteVersion:number; localData:Record<string,unknown>; remoteData:Record<string,unknown>; status:"open"|"resolved"; createdAt:number; resolvedAt:number|null; groupCount?:number };
 export const defaultAbout: AboutContent = { title: "把路过的光，\n慢慢收进来。", body: "SONG 是一个关于摄影、随笔与个人收藏的空间。\n\n这里的照片不是按地点罗列，而是被重新编排成可以阅读的系列。文字也保留公开与私藏之间的界线：有些适合分享，有些只留给自己。", note: "个人介绍与联系方式可在工作室中继续完善。" };
 export type SiteContent = { copy: SiteCopy; about: AboutContent; series: Series[]; essays: Essay[]; favorites: Favorite[] };
 

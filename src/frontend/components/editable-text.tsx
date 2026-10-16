@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { fontOptions, resolveTextColor, type CopyPage, type TextFormat } from "@/shared/site-copy";
 import { applyTextFormat, findStandard, fontFamilies, inheritedFormat, previewPixels, resolveStandard, scopedFormatKey, type TextRole } from "@/shared/text-standards";
 import { TextColorPicker } from "@/frontend/components/text-color-picker";
-import type { SiteContent } from "@/shared/content-model";
+import type { Series, SiteContent } from "@/shared/content-model";
+import { seriesPhotoOrder } from "@/shared/series-layout-operations";
 
 type Entity = "copy" | "series" | "essay" | "favorite" | "about" | "photo";
 type Props = { value: string; editValue?: string; field: string; entity?: Entity; id?: string; enabled: boolean; csrf: string; textPage?: CopyPage; textRole?: TextRole };
@@ -60,6 +61,7 @@ export function EditableText({ value, editValue, field, entity = "copy", id, ena
         const found = entity === 'series' ? content.series.find(x => x.id === id) : entity === 'essay' ? content.essays.find(x => x.id === id) : entity === 'favorite' ? content.favorites.find(x => x.id === id) : content.series.flatMap(x => x.photos).find(x => x.id === id);
         if (!found) throw new Error('内容已删除，请刷新页面');
         record = { ...found, [field]: draft };
+        if (entity === "series") record.photoOrder = seriesPhotoOrder(found as Series);
       }
       const saved = await fetch('/api/studio', { method: 'POST', headers: { 'content-type': 'application/json', 'x-csrf-token': csrf }, body: JSON.stringify({ action: 'upsert', entity, record, ...(entity !== "copy" ? { textFormat: { key: formatKey, style: format, page: textPage, role: textRole } } : {}) }) });
       const result = await saved.json() as { error?: string };

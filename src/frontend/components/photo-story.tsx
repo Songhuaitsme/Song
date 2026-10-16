@@ -5,17 +5,22 @@ import { EditableText } from "@/frontend/components/editable-text";
 import type { Photo } from "@/shared/content-model";
 import type { SeriesChapter } from "@/shared/series-narrative";
 import { buildPhotoStorySections } from "@/shared/photo-story-layout";
+import { layoutSections, type LayoutGroup, type SeriesLayout } from "@/shared/series-layout";
+import { StoryLayoutGroup } from "./story-layout-group";
 
 type Props = {
   photos: Photo[];
   chapters?: SeriesChapter[];
+  layout?: SeriesLayout | null;
   seriesId?: string;
   editor?: { enabled: boolean; csrf: string };
   labels?: { close: string; prev: string; next: string };
 };
 
-export function PhotoStory({ photos, chapters, seriesId, editor, labels = { close: "关闭", prev: "上一张", next: "下一张" } }: Props) {
-  const sections = useMemo(() => buildPhotoStorySections(photos, chapters), [photos, chapters]);
+export function PhotoStory({ photos: sourcePhotos, chapters, layout, seriesId, editor, labels = { close: "关闭", prev: "上一张", next: "下一张" } }: Props) {
+  const built = useMemo(() => layout ? layoutSections(sourcePhotos, layout, chapters) : null, [sourcePhotos, layout, chapters]);
+  const photos = built?.photos ?? sourcePhotos;
+  const sections = useMemo(() => built ? built.sections.map(section => ({chapter:section.chapter,rows:section.groups.map(row=>({kind:"single" as const,items:row.items,group:row.group as LayoutGroup|undefined}))})) : buildPhotoStorySections(sourcePhotos, chapters).map(section=>({...section,rows:section.rows.map(row=>({...row,group:undefined as LayoutGroup|undefined}))})), [built, sourcePhotos, chapters]);
   const [active, setActive] = useState<number | null>(null);
   const touchStart = useRef<number | null>(null);
   const lightboxRef = useRef<HTMLDivElement>(null);
@@ -71,7 +76,7 @@ export function PhotoStory({ photos, chapters, seriesId, editor, labels = { clos
           </div>
           {section.chapter.body.trim() && <div className="story-prose">{section.chapter.body.split(/\n\s*\n/).map((paragraph, index) => <p key={index} data-text-page="story" data-text-role="body">{paragraph}</p>)}</div>}
         </header>}
-        <div className="story-section-rows">{section.rows.map(row => <div
+        <div className="story-section-rows">{section.rows.map(row => row.group ? <StoryLayoutGroup key={row.group.id} group={row.group} items={row.items.map(item=>({...item,frame:row.group!.items.find(frame=>frame.photoId===item.photo.id)!}))} editor={editor} onOpen={setActive}/> : <div
         key={row.items[0].photo.id}
         className={`story-photo-row story-photo-row-${row.kind}`}
         style={{ "--story-columns": row.items.map(item => `minmax(0, ${item.aspectRatio}fr)`).join(" ") } as CSSProperties}

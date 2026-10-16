@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "../frontend/styles/responsive.css";
 import "../frontend/styles/photo-story.css";
+import "../frontend/styles/series-layout.css";
 import "../frontend/styles/series-narrative-editor.css";
 import "../frontend/styles/text-standards.css";
 import { Toaster } from "@/frontend/components/ui/sonner";
