@@ -66,11 +66,14 @@ export const standardDefinitions: TextStandardDefinition[] = [
   define("story", "overlayLink", "全屏照片按钮", "关闭　上一张　下一张", 14, "14px"),
   define("story", "overlaySummary", "全屏照片说明", "01 / 在雨中停留片刻", 14, "14px"),
   define("story", "pageTitle", "私密内容页标题", "摄影系列", 64, "clamp(36px, 4.6vw, 64px)", "36px"),
-  define("story", "summary", "系列简介", "让画面多停留几秒。", 17, "17px", "15.2px"),
-  define("story", "caption", "图片注释", "桥下的光，慢慢经过水面。", 15.68, "15.68px", "14.4px"),
-  define("story", "sectionTitle", "摄影章节标题", "雨中的距离", 28, "28px", "22px", "26px"),
-  define("story", "label", "地点、日期与结束标签", "重庆 · 2026 / END", 12, "12px", "11px"),
-  define("story", "link", "返回目录", "返回系列目录", 12, "12px"),
+  // Keep the original size anchors so saved custom formats scale with the new
+  // reading sizes, just as they do for the responsive cover standards.
+  define("story", "summary", "系列简介", "让画面多停留几秒。", 17, "20px", "17px", "19px"),
+  define("story", "caption", "图片注释", "桥下的光，慢慢经过水面。", 15.68, "20px", "16px", "18px"),
+  define("story", "sectionTitle", "摄影章节标题", "雨中的距离", 28, "32px", "24px", "28px"),
+  define("story", "label", "地点、日期与结束标签", "重庆 · 2026 / END", 12, "16px", "14px", "15px"),
+  define("story", "link", "返回目录", "返回系列目录", 12, "16px", "14px", "16px"),
+  define("story", "body", "章节正文与系列收尾", "记下今天的一点片段。", 17, "20px", "17px", "19px"),
   define("essays", "pageTitle", "页面主标题", "写下来的事", 84, "clamp(44px, 5.3vw, 84px)", "clamp(36px, 9vw, 50px)"),
   define("essays", "itemTitle", "随笔条目标题", "希望世界像风一样穿过我", 40, "40px"),
   define("essays", "summary", "页面简介", "关于观看、行走与偶然留下的片段。", 22, "22px", "18px"),
@@ -91,7 +94,7 @@ export const standardDefinitions: TextStandardDefinition[] = [
   define("about", "body", "介绍正文", "用影像与文字，记下走过的地方。", 24, "24px", "20px"),
   define("about", "caption", "补充说明与联系方式", "欢迎来信。", 18, "18px"),
   define("about", "label", "栏目标签", "ABOUT / 关于", 16, "16px", "14px"),
-  ...(["home", "series", "story", "essays", "essay", "collection", "about"] as const).map(page => define(page, "body", page === "story" ? "章节正文与系列收尾" : "新增文字段落", "记下今天的一点片段。", 17, "17px", "15.68px")).filter(item => item.page !== "essay" && item.page !== "about"),
+  ...(["home", "series", "essays", "collection"] as const).map(page => define(page, "body", "新增文字段落", "记下今天的一点片段。", 17, "17px", "15.68px")),
 ];
 export const standardId = (page: CopyPage, role: TextRole) => `${page}:${role}`;
 export const scopedFormatKey = (page: CopyPage, role: TextRole, fieldKey: string) => `${standardId(page, role)}|${fieldKey}`;
