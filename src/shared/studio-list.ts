@@ -1,6 +1,6 @@
-import type { AccessLevel, Favorite, Series, SiteContent } from "./content-model";
+import type { AccessLevel, Essay, Favorite, Series, SiteContent } from "./content-model";
 
-export type StudioListItem = Series | Favorite;
+export type StudioListItem = Series | Favorite | Essay;
 export type StudioListView = { access: AccessLevel | "all"; query: string; category: string; sort: "display" | "recent"; page: number };
 export type BulkAccessResult = {
   updated: { id: string; access: AccessLevel; version: number; updatedAt: number }[];
@@ -33,7 +33,7 @@ export function studioListPage<T extends StudioListItem>(items: T[], saved: T[],
   const filtered = displayOrder(items).filter(item => {
     const access = snapshots.get(item.id)?.access ?? "draft";
     const category = "category" in item ? item.category.trim() || "其他" : "";
-    const search = "photos" in item ? `${item.title}\n${item.description}` : `${item.title}\n${item.category}\n${item.note}`;
+    const search = "photos" in item ? `${item.title}\n${item.description}` : "body" in item ? `${item.title}\n${item.excerpt}\n${item.body}` : `${item.title}\n${item.category}\n${item.note}`;
     return (view.access === "all" || access === view.access) && (!view.category || category === view.category) && (!query || search.toLocaleLowerCase().includes(query));
   });
   if (view.sort === "recent") filtered.sort((a, b) => (snapshots.get(b.id)?.updatedAt ?? 0) - (snapshots.get(a.id)?.updatedAt ?? 0));

@@ -16,7 +16,7 @@ export function StudioStatusBadge({ access }: { access: AccessLevel }) {
 }
 
 export function StudioContentList<T extends StudioListItem>({ items, savedItems, entity, busy, reveal, onCreate, onSetAccess, renderEditor }: {
-  items: T[]; savedItems: T[]; entity: "series" | "favorite"; busy: boolean;
+  items: T[]; savedItems: T[]; entity: "series" | "favorite" | "essay"; busy: boolean;
   reveal?: { id: string; token: number };
   onCreate(): void;
   onSetAccess(ids: string[], access: AccessLevel): Promise<BulkAccessResult>;
@@ -36,7 +36,7 @@ export function StudioContentList<T extends StudioListItem>({ items, savedItems,
   const selection = eligible.filter(item => selected.has(item.id));
   const categories = [...new Set(items.flatMap(item => "category" in item ? [item.category.trim() || "其他"] : []))].sort((a, b) => a.localeCompare(b, "zh-CN"));
   const canReorder = view.access === "all" && !view.query.trim() && !view.category && view.sort === "display" && !anyDirty;
-  const title = entity === "series" ? "摄影系列" : "收藏";
+  const title = entity === "series" ? "摄影系列" : entity === "essay" ? "随笔" : "收藏";
   const changeView = (patch: Partial<StudioListView>) => { setView(current => ({ ...current, ...patch, page: patch.page ?? 1 })); setSelected(new Set()); };
   const showItem = (id: string) => {
     const ordered = displayOrder(items);
@@ -77,12 +77,12 @@ export function StudioContentList<T extends StudioListItem>({ items, savedItems,
   }
 
   return <section className="studio-content-list" data-entity={entity} aria-label={`${title}管理`}>
-    <div className="studio-actions"><div><h2>{title}</h2><p>共 {items.length} 条 · 按状态查找，点击条目展开编辑</p></div><Button disabled={busy} onClick={onCreate}><Plus/>{entity === "series" ? "新建系列" : "新增收藏"}</Button></div>
+    <div className="studio-actions"><div><h2>{title}</h2><p>共 {items.length} 条 · 按状态查找，点击条目展开编辑</p></div><Button disabled={busy} onClick={onCreate}><Plus/>{entity === "series" ? "新建系列" : entity === "essay" ? "新建随笔" : "新增收藏"}</Button></div>
     <div className="studio-status-filters" role="group" aria-label="按权限筛选">
       {(["all", "public", "private", "draft"] as const).map(access => <button key={access} type="button" aria-pressed={view.access === access} disabled={busy} data-access={access} onClick={() => changeView({ access })}>{access === "all" ? "全部" : accessLabels[access]}<span>{page.counts[access]}</span></button>)}
     </div>
     <div className="studio-list-search">
-      <Input value={view.query} disabled={busy} onChange={event => changeView({ query: event.target.value })} placeholder={entity === "series" ? "搜索系列标题或简介" : "搜索收藏标题、分类或短评"} aria-label="搜索条目"/>
+      <Input value={view.query} disabled={busy} onChange={event => changeView({ query: event.target.value })} placeholder={entity === "series" ? "搜索系列标题或简介" : entity === "essay" ? "搜索随笔标题、摘要或正文" : "搜索收藏标题、分类或短评"} aria-label="搜索条目"/>
       {entity === "favorite" && <NativeSelect value={view.category} disabled={busy} onChange={event => changeView({ category: event.target.value })} aria-label="收藏分类"><NativeSelectOption value="">全部分类</NativeSelectOption>{categories.map(category => <NativeSelectOption key={category} value={category}>{category}</NativeSelectOption>)}</NativeSelect>}
       <NativeSelect value={view.sort} disabled={busy} onChange={event => changeView({ sort: event.target.value as StudioListView["sort"] })} aria-label="列表排序"><NativeSelectOption value="display">展示顺序</NativeSelectOption><NativeSelectOption value="recent">最近修改</NativeSelectOption></NativeSelect>
     </div>
@@ -98,14 +98,15 @@ export function StudioContentList<T extends StudioListItem>({ items, savedItems,
     <div className="studio-entry-list">
       {page.items.map(item => {
         const snapshot = snapshots.get(item.id), savedAccess = snapshot?.access ?? "draft", isDirty = dirty(item), open = expanded.has(item.id);
-        const image = "photos" in item ? item.coverUrl : item.imageUrl;
+        const image = "photos" in item ? item.coverUrl : "imageUrl" in item ? item.imageUrl : "";
+        const summary = "photos" in item ? `${item.photos.length} 张照片` : "publishedAt" in item ? (item.publishedAt ? `发表于 ${item.publishedAt}` : "未设置发布日期") : item.category || "其他";
         const date = snapshot?.updatedAt ? new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Taipei" }).format(snapshot.updatedAt) : "";
         return <article className="studio-entry" id={item.id} key={item.id} data-access={savedAccess} data-dirty={isDirty}>
           <div className="studio-entry-heading">
             <input type="checkbox" aria-label={`选择${item.title || "未命名条目"}`} checked={!isDirty && selected.has(item.id)} disabled={busy || isDirty} onChange={event => toggleSelected(item.id, event.target.checked)}/>
             <button type="button" className="studio-entry-toggle" disabled={busy} aria-expanded={open} aria-controls={`editor-${item.id}`} onClick={() => toggleExpanded(item.id)}>
-              <span className="studio-entry-image">{image ? <img src={image} alt="" loading="lazy"/> : <ImageIcon aria-hidden="true"/>}</span>
-              <span className="studio-entry-info"><strong>{item.title || "未命名条目"}</strong><span className="studio-entry-meta">{"photos" in item ? `${item.photos.length} 张照片` : item.category || "其他"}{date && ` · 更新于 ${date}`}</span></span>
+              <span className="studio-entry-image">{image ? <img src={image} alt="" loading="lazy"/> : entity === "essay" ? <PencilLine aria-hidden="true"/> : <ImageIcon aria-hidden="true"/>}</span>
+              <span className="studio-entry-info"><strong>{item.title || "未命名条目"}</strong><span className="studio-entry-meta">{summary}{date && ` · 更新于 ${date}`}</span></span>
               <span className="studio-entry-flags"><StudioStatusBadge access={savedAccess}/>{isDirty && <span className="studio-unsaved">{item.access !== savedAccess ? `待保存：${accessLabels[item.access]}` : "未保存"}</span>}</span>
               {open ? <ChevronDown size={18} aria-hidden="true"/> : <ChevronRight size={18} aria-hidden="true"/>}
             </button>

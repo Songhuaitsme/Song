@@ -50,3 +50,14 @@ test("refresh keeps unsaved edits and newly created drafts while accepting commi
   assert.equal(result.favorites[0].note,"unsaved");assert.equal(result.favorites[1].title,"remote title");
   assert.equal(result.favorites[2].id,"f-3");assert.equal(result.copy.values.name,"draft copy");assert.equal(result.about.title,"new");
 });
+
+test("essays support status paging, title/excerpt/body search and saved-state classification",()=>{
+  const essays=Array.from({length:45},(_,i)=>({id:`essay-${i}`,title:`Essay ${i}`,slug:`essay-${i}`,excerpt:`Excerpt ${i}`,body:`正文检索 ${i}`,publishedAt:"2026-10-16",access:i%3===0?"private":"draft",sortOrder:i,version:1,updatedAt:i*100}));
+  assert.equal(studioListPage(essays,essays,defaultStudioView).items.length,20);
+  assert.equal(studioListPage(essays,essays,{...defaultStudioView,page:3}).items.length,5);
+  assert.equal(studioListPage(essays,essays,{...defaultStudioView,query:"Excerpt 44"}).items[0].id,"essay-44");
+  assert.equal(studioListPage(essays,essays,{...defaultStudioView,query:"正文检索 44"}).items[0].id,"essay-44");
+  const changed=essays.map(essay=>essay.id==="essay-0"?{...essay,access:"public",body:"Unsaved body"}:essay);
+  const page=studioListPage(changed,essays,{...defaultStudioView,access:"private"});
+  assert.deepEqual(page.counts,{all:45,public:0,private:15,draft:30});assert.equal(page.items[0].id,"essay-0");assert.ok(studioItemDirty(changed[0],essays[0]));
+});

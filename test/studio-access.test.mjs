@@ -8,6 +8,7 @@ const compile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.Scri
 globalThis.__studioAccessAuth={session:{username:"owner"},csrf:true};
 const db=new DatabaseSync(":memory:");
 for(const table of ["series","favorites"])db.exec(`CREATE TABLE ${table} (id TEXT PRIMARY KEY,title TEXT,description TEXT,sort_order INTEGER,access TEXT,published INTEGER,version INTEGER,updated_at INTEGER,deleted_at INTEGER);`);
+db.exec("CREATE TABLE essays (id TEXT PRIMARY KEY,title TEXT,body TEXT,excerpt TEXT,sort_order INTEGER,access TEXT,visibility TEXT,status TEXT,version INTEGER,updated_at INTEGER,deleted_at INTEGER);");
 globalThis.__studioAccessDb={prepare(sql){let params=[];return {bind(...values){assert.ok(values.length<=100,"D1 supports at most 100 bound parameters");params=values;return this;},async all(){return {results:db.prepare(sql).all(...params)};}};}};
 const storeStub=moduleUrl("export const getDatabase=()=>globalThis.__studioAccessDb;export const getSiteContent=async()=>({});export const upsertEntity=async()=>({id:'x'});export const deleteEntity=async()=>{};export const saveAboutContent=async()=>({});export const saveSiteCopy=async()=>({});export const saveTextStandards=async()=>({});export const getSiteCopy=async()=>({});");
 const helperSource=(await readFile(new URL("../src/backend/content/studio-access.ts",import.meta.url),"utf8")).replace('from "./content-store"',`from "${storeStub}"`);
@@ -22,7 +23,7 @@ for(const [name,url] of [
   ["@/shared/text-standards",moduleUrl("export const applyTextFormat=v=>v;")],
 ])route=route.replaceAll(`"${name}"`,`"${url}"`);
 const {POST}=await import(moduleUrl(route));
-function seed(){for(const table of ["series","favorites"]){db.exec(`DELETE FROM ${table}`);const insert=db.prepare(`INSERT INTO ${table} VALUES (?,?,?,?,?,?,?,?,?)`);insert.run("one","Keep title","Keep description",8,"private",0,4,1,null);insert.run("deleted","Deleted","Hidden",9,"draft",0,1,1,100);}}
+function seed(){for(const table of ["series","favorites"]){db.exec(`DELETE FROM ${table}`);const insert=db.prepare(`INSERT INTO ${table} VALUES (?,?,?,?,?,?,?,?,?)`);insert.run("one","Keep title","Keep description",8,"private",0,4,1,null);insert.run("deleted","Deleted","Hidden",9,"draft",0,1,1,100);}db.exec("DELETE FROM essays");const insert=db.prepare("INSERT INTO essays VALUES (?,?,?,?,?,?,?,?,?,?,?)");insert.run("essay-one","Keep essay title","Keep body","Keep excerpt",18,"draft","private","draft",4,1,null);insert.run("essay-deleted","Deleted","Hidden","Hidden",19,"draft","private","draft",1,1,100);}
 test("bulk permissions update only access metadata, leave content/order intact, and report missing/deleted IDs",async()=>{
   seed();const result=await setStudioAccess(validateBulkAccess({entity:"series",ids:["one","deleted","missing"],access:"public"}));
   assert.deepEqual(result.updated.map(r=>[r.id,r.access,r.version]),[["one","public",5]]);
@@ -50,4 +51,21 @@ test("bulk API requires both the admin session and CSRF and rejects malformed re
   globalThis.__studioAccessAuth.csrf=true;assert.equal((await POST(request({...body,access:"invalid"}))).status,400);
   assert.equal(db.prepare("SELECT access FROM series WHERE id='one'").get().access,"private");
   const response=await POST(request(body));assert.equal(response.status,200);assert.equal((await response.json()).updated[0].access,"public");
+});
+
+test("essay bulk access maintains legacy visibility/status fields without changing body, excerpt or order",async()=>{
+  seed();let version=4;
+  for(const [access,visibility,status] of [["public","public","published"],["private","private","published"],["draft","private","draft"]]){
+    const result=await setStudioAccess(validateBulkAccess({entity:"essay",ids:["essay-one","essay-deleted","missing"],access}));
+    assert.equal(result.updated[0].version,++version);assert.equal(result.skipped.length,2);
+    const row=db.prepare("SELECT * FROM essays WHERE id='essay-one'").get();
+    assert.equal(row.access,access);assert.equal(row.visibility,visibility);assert.equal(row.status,status);
+    assert.equal(row.title,"Keep essay title");assert.equal(row.body,"Keep body");assert.equal(row.excerpt,"Keep excerpt");assert.equal(row.sort_order,18);
+  }
+});
+
+test("the studio API accepts essay bulk permissions and returns fresh access metadata",async()=>{
+  seed();globalThis.__studioAccessAuth.session={username:"owner"};globalThis.__studioAccessAuth.csrf=true;
+  const response=await POST(new Request("https://sonforu.work/api/studio",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"set-access",entity:"essay",ids:["essay-one"],access:"private"})}));
+  assert.equal(response.status,200);const result=await response.json();assert.equal(result.updated[0].access,"private");assert.equal(result.updated[0].version,5);
 });
