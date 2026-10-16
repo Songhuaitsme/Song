@@ -293,7 +293,27 @@ html:not([data-text-standards="2"]) .photography-page .photography-card-descript
 .photography-page .photography-card-description > [data-text-format] { font-size: 20px; }
 html:not([data-text-standards="2"]) .photography-page .photography-card-description > [data-text-format] { font-size: 20px !important; }
 .photography-page .photography-card-link,
-.photography-page .series-feature-link { min-height: 44px; padding: 10px 18px; font-size: 12px; }
+.photography-page .series-feature-link {
+  --series-action-background: var(--ink);
+  --series-action-foreground: var(--paper);
+  --series-action-focus: var(--jade);
+  min-height: 44px; max-width: 100%; gap: 10px; padding: 10px 18px; font-size: 12px;
+  /* Keep the colour change immediate; animate the arrow rather than fading the label. */
+  transition: border-color 180ms var(--ease-detail);
+}
+.photography-page .series-feature-link { --series-action-background: #fff; --series-action-foreground: var(--ink); --series-action-focus: #fff; }
+.photography-page .series-feature-private .series-feature-link { --series-action-background: var(--ink); --series-action-foreground: var(--paper); --series-action-focus: var(--jade); }
+.photography-action-arrow { flex-shrink: 0; transition: transform 180ms var(--ease-detail); }
+.photography-page :is(.photography-card-link, .series-feature-link) > [data-text-role] { min-width: 0; overflow-wrap: anywhere; }
+.photography-page :is(.photography-card-link, .series-feature-link):is(:hover, :focus-visible, :active) { background: var(--series-action-background); border-color: var(--series-action-background); }
+/* Interaction colours must also win over saved per-text !important overrides. */
+html body main.photography-page[data-copy-page="series"] :is(.photography-card-link, .series-feature-link):is(:hover, :focus-visible, :active),
+html body main.photography-page[data-copy-page="series"] :is(.photography-card-link, .series-feature-link):is(:hover, :focus-visible, :active) :is([data-text-role], .nearby-edit) { color: var(--series-action-foreground) !important; }
+html body main.photography-page[data-copy-page="series"] .series-feature-private .series-feature-link:not(:hover, :focus-visible, :active),
+html body main.photography-page[data-copy-page="series"] .series-feature-private .series-feature-link:not(:hover, :focus-visible, :active) :is([data-text-role], .nearby-edit) { color: var(--ink) !important; }
+.photography-page :is(.photography-card-link, .series-feature-link):is(:hover, :focus-visible) .photography-action-arrow { transform: translateX(3px); }
+.photography-page :is(.photography-card-link, .series-feature-link):focus-visible { outline: 2px solid var(--series-action-focus); outline-offset: 4px; }
+.photography-page :is(.photography-card-link, .series-feature-link):active .photography-action-arrow { transform: translateX(1px); }
 .story-editorial .story-hero { width: var(--site-width); margin: 40px auto 0; min-height: clamp(480px, 68svh, 780px); }
 .story-editorial .story-hero-copy { width: calc(100% - 80px); }
 .story-editorial .story-hero h1 { font-size: clamp(38px, 4.6vw, 68px); }
