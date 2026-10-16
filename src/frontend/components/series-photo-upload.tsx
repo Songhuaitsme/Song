@@ -13,7 +13,7 @@ const labels: Record<PhotoUploadItem["state"], string> = {
   waiting: "等待上传", processing: "正在处理", uploading: "正在上传", saving: "正在保存", done: "已加入系列", error: "未完成",
 };
 
-export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, onBusyChange, onPhotoAdded, onCoverChange }: {
+export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, onBusyChange, onPhotoAdded, onCoverChange, onSeriesSaved }: {
   series: Series;
   csrfToken: string;
   busy: boolean;
@@ -21,6 +21,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, on
   onBusyChange(value: boolean): void;
   onPhotoAdded(photo: Photo): void;
   onCoverChange(url: string): void;
+  onSeriesSaved?(series: Series): void;
 }) {
   const [items, setItems] = useState<PhotoUploadItem[]>([]);
   const [running, setRunning] = useState(false);
@@ -51,6 +52,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, on
         // New series must exist before its photos are inserted.
         await save("series", series);
         savedSeries = series;
+        onSeriesSaved?.(series);
       }
       const startOrder = Math.max(0, ...savedSeries.photos.map(photo => photo.sortOrder), ...series.photos.map(photo => photo.sortOrder));
       const results = await uploadPhotoBatch(queue, {
