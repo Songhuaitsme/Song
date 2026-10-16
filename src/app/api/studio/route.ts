@@ -1,5 +1,5 @@
 import { validateSiteCopy, type TextFormat } from "@/shared/site-copy";
-import { deleteEntity, getSiteContent, upsertEntity, saveAboutContent, saveSiteCopy, saveTextStandards, getSiteCopy } from "@/backend/content/content-store";
+import { deleteEntity, getSiteContent, upsertEntity, saveEntireSeries, saveAboutContent, saveSiteCopy, saveTextStandards, getSiteCopy } from "@/backend/content/content-store";
 import { getAdminSession, validateCsrf } from "@/backend/auth/admin-auth";
 import { applyTextFormat, type TextRole } from "@/shared/text-standards";
 import type { CopyPage } from "@/shared/site-copy";
@@ -16,6 +16,10 @@ export async function POST(request: Request) {
       try { input = validateBulkAccess(body); }
       catch (error) { return Response.json({ error: error instanceof Error ? error.message : "批量操作参数无效" }, { status: 400 }); }
       return Response.json(await setStudioAccess(input), { headers: { "cache-control": "no-store" } });
+    }
+    if(body.action==="save-series"){
+      if(body.entity!=="series"||!body.record)return Response.json({error:"系列保存参数无效"},{status:400});
+      return Response.json({ok:true,...await saveEntireSeries(body.record)},{headers:{"cache-control":"no-store"}});
     }
     let formattedCopy;
     if (body.entity === "copy" && body.action === "typography" && body.record) { const copy=await saveTextStandards(body.record.textStandards); return Response.json({ok:true,copy}); }

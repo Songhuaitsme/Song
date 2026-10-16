@@ -50,6 +50,7 @@ const sync = await import(await load('@/backend/sync/sync-service'));
 const { syncVersionGuard, validateNarrativeSync } = await import(await load('@/backend/sync/narrative-sync'));
 const { POST } = await import(await load('@/app/api/studio/route'));
 const { studioItemDirty, mergeStudioReload } = await import(await load('@/shared/studio-list'));
+const { entireSeriesPayload, applyEntireSeriesSave } = await import(await load('@/shared/series-save'));
 const narrative = (anchor = 'p2') => ({ intro: '真实导语', chapters: [{ id: 'chapter-one', beforePhotoId: anchor, title: '雨中的距离', body: '第一段观察。\n\n第二段思考。' }], closing: '仍在思考的问题。' });
 const row = () => sqlite.prepare("SELECT * FROM series WHERE id='story'").get();
 const record = () => ({ id: 'story', slug: 'story', title: '原始标题', description: '目录短简介', coverUrl: '/photos/01-fog-clock.webp', access: 'public', sortOrder: 1, version: row().version });
@@ -312,4 +313,44 @@ test('a thousand-photo order saves atomically through bounded JSON parameters',a
   for(let i=0;i<1000;i++)insert.run('large-'+i,'story','/photo.webp','/photo.webp',1200,1800,i+1);
   const photos=sqlite.prepare("SELECT id,width,height,version FROM photos WHERE series_id='story' ORDER BY sort_order").all(),layout=layouts.automaticLayout(photos);layout.groups.reverse();
   const response=await store.upsertEntity('series',{...record(),layout,photoOrder:layoutOperations.seriesPhotoOrder({photos,layout})});assert.equal(response.photoOrder.length,1000);assert.deepEqual(sqlite.prepare("SELECT id FROM photos WHERE series_id='story' ORDER BY sort_order").all().map(p=>p.id),layouts.layoutIds(layout));
+});
+
+const editableSeries=async()=> (await store.getSiteContent(true)).series.find(item=>item.id==='story');
+test('whole-series save commits metadata, access, narrative, layout, order and every photo field together',async()=>{
+  seed();const series=await editableSeries();series.title='全系列保存';series.description='新的短简介';series.coverUrl='/new-cover.webp';series.access='private';series.narrative=narrative('p3');series.layout=manual();series.layout.groups[0].gap='seamless';
+  const before=photo('p1');Object.assign(series.photos[0],{alt:'新的替代文字',caption:'  新的注释  ',location:'新的地点',takenAt:'2026-10-16',imageUrl:'/do-not-write.webp',width:999});series.photos[3].caption='第四张注释';
+  const response=await store.saveEntireSeries(entireSeriesPayload(series));assert.equal(row().title,'全系列保存');assert.equal(row().access,'private');assert.equal(row().published,0);assert.deepEqual(JSON.parse(row().narrative_json),series.narrative);assert.deepEqual(JSON.parse(row().layout_json),series.layout);
+  assert.equal(photo('p1').caption,'新的注释');assert.equal(photo('p1').alt,'新的替代文字');assert.equal(photo('p1').location,'新的地点');assert.equal(photo('p1').taken_at,'2026-10-16');assert.equal(photo('p4').caption,'第四张注释');assert.equal(photo('p1').image_url,before.image_url);assert.equal(photo('p1').width,before.width);assert.equal(response.photoEdits.length,4);
+});
+test('one invalid photo or duplicate/foreign entry prevents every whole-series write',async()=>{
+  for(const mutate of [s=>s.photos[3].caption='x'.repeat(3001),s=>s.photos[3].id='foreign',s=>s.photos[3].id='p1',s=>s.photos.pop()]){
+    seed();const series=await editableSeries(),before={...row()};series.title='不能部分保存';series.photos[0].caption='不能部分保存';const payload=entireSeriesPayload(series);mutate(payload);
+    await assert.rejects(store.saveEntireSeries(payload));assert.deepEqual({...row()},before);assert.equal(photo('p1').caption,'');assert.equal(photo('p1').sort_order,0);
+  }
+});
+test('stale whole-series edits and a database failure cannot partially commit metadata, order or annotations',async()=>{
+  seed();let series=await editableSeries();series.title='不能覆盖';series.photos[0].caption='不能覆盖';sqlite.prepare("UPDATE photos SET caption='另一端的修改',version=version+1 WHERE id='p4'").run();await assert.rejects(store.saveEntireSeries(entireSeriesPayload(series)),/照片版本/);assert.equal(row().title,'原始标题');assert.equal(photo('p1').caption,'');assert.equal(photo('p4').caption,'另一端的修改');
+  seed();series=await editableSeries();series.title='事务回滚';series.photos[0].caption='事务回滚';const prepare=adapter.prepare;
+  adapter.prepare=sql=>prepare(sql.startsWith('WITH edits AS')?"SELECT json('injected-photo-failure') WHERE ? IS NOT NULL AND ? IS NOT NULL":sql);
+  try{await assert.rejects(store.saveEntireSeries(entireSeriesPayload(series)));}finally{adapter.prepare=prepare;}
+  assert.equal(row().title,'原始标题');assert.equal(row().version,1);assert.equal(photo('p1').caption,'');assert.equal(photo('p1').sort_order,0);assert.equal(photo('p1').version,1);
+});
+test('whole-series save increments each changed photo once and leaves unchanged photo versions alone',async()=>{
+  seed();await store.saveEntireSeries(entireSeriesPayload(await editableSeries()));let series=await editableSeries();const before=series.photos.map(photo=>photo.version);series.photos[0].caption='单独修改';await store.saveEntireSeries(entireSeriesPayload(series));assert.equal(photo('p1').version,before[0]+1);assert.equal(photo('p2').version,before[1]);
+  series=await editableSeries();series.layout=manual();series.layout.groups.reverse();series.photos[0].caption='同时改顺序和注释';const version=photo('p1').version;const response=await store.saveEntireSeries(entireSeriesPayload(series));assert.equal(photo('p1').version,version+1);assert.equal(response.photoOrder.find(p=>p.id==='p1').version,version+1);
+});
+test('whole-series API checks administrator, CSRF, input validity and supports empty new series',async()=>{
+  seed();const record=entireSeriesPayload(await editableSeries()),body={action:'save-series',entity:'series',record};globalThis.__narrativeAuth={session:null,csrf:true};assert.equal((await request(body)).status,403);globalThis.__narrativeAuth={session:{},csrf:false};assert.equal((await request(body)).status,403);globalThis.__narrativeAuth={session:{},csrf:true};assert.equal((await request({...body,entity:'photo'})).status,400);
+  assert.equal((await request(body)).status,200);const result=await store.saveEntireSeries({id:'empty-new',slug:'empty-new',title:'新系列',description:'',coverUrl:'',access:'draft',sortOrder:10,photos:[],photoOrder:[]});assert.equal(result.series.title,'新系列');assert.deepEqual(result.photoEdits,[]);
+});
+test('whole-series acknowledgement clears saved dirty state and retains inputs typed during saving',async()=>{
+  seed();const snapshot=await editableSeries();snapshot.title='点击时的标题';snapshot.photos[0].caption=' 点击时的注释 ';snapshot.draftPhotoOrder=['p4','p3','p2','p1'];const result=await store.saveEntireSeries(entireSeriesPayload(snapshot));
+  const content={series:[snapshot],essays:[],favorites:[],about:{},copy:{}},baseline=applyEntireSeriesSave(content,snapshot,result,false),clean=applyEntireSeriesSave(content,snapshot,result,true);assert.equal(studioItemDirty(clean.series[0],baseline.series[0]),false);assert.equal(clean.series[0].draftPhotoOrder,undefined);assert.equal(clean.series[0].photos.find(p=>p.id==='p1').caption,'点击时的注释');
+  const newer=structuredClone(snapshot);newer.title='等待时继续输入的标题';newer.photos[0].caption='等待时继续输入的注释';newer.photos[1].location='未提交的地点';
+  const working=applyEntireSeriesSave({...content,series:[newer]},snapshot,result,true).series[0];assert.equal(working.title,newer.title);assert.equal(working.photos.find(p=>p.id==='p1').caption,newer.photos[0].caption);assert.equal(working.photos.find(p=>p.id==='p2').location,newer.photos[1].location);assert.ok(studioItemDirty(working,baseline.series[0]));
+  await store.saveEntireSeries(entireSeriesPayload(working));assert.equal(photo('p1').caption,newer.photos[0].caption);assert.equal(row().title,newer.title);
+});
+test('whole-series photo annotations save at scale with bounded parameters and bound text',async()=>{
+  seed();sqlite.exec("DELETE FROM photos WHERE series_id='story'");const insert=sqlite.prepare('INSERT INTO photos(id,series_id,image_url,original_url,width,height,sort_order) VALUES(?,?,?,?,?,?,?)');for(let i=0;i<1000;i++)insert.run('whole-'+i,'story','/photo.webp','/photo.webp',1200,1800,i+1);
+  const series=await editableSeries();for(const photo of series.photos)photo.caption="现场记录 '); SELECT 1; -- "+photo.id;const response=await store.saveEntireSeries(entireSeriesPayload(series));assert.equal(response.photoEdits.length,1000);assert.equal(photo('whole-999').caption,series.photos.find(p=>p.id==='whole-999').caption);assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM photos WHERE series_id='story'").get().n,1000);
 });

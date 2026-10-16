@@ -61,13 +61,14 @@ export async function getSiteContent(includePrivate=false):Promise<SiteContent>{
   }catch(error){console.error("Content database unavailable",error);return fallbackContent(includePrivate);}
 }
 
-export async function upsertEntity(entity:Entity,record:Record<string,unknown>){
+export async function saveEntireSeries(record:Record<string,unknown>){return upsertEntity("series",{...record,layout:record.layout??null},true);}
+export async function upsertEntity(entity:Entity,record:Record<string,unknown>,saveAllPhotos=false){
   const db=getDatabase();if(!db)throw new Error("数据库暂时不可用");await bootstrap(db);const id=String(record.id||crypto.randomUUID()),stamp=now();
   if(entity==="photo")await assertPhotoCanMove(db,id,record.seriesId);
   if(entity==="series"){
     if(Object.hasOwn(record,"layout")) {
       const level=access(record.access);
-      return saveSeriesLayout(db,id,record,[safeSlug(record.slug),text(record.title,"标题",200),text(record.description,"简介",3000),safeUrl(record.coverUrl),level,level==="public"?1:0,number(record.sortOrder)]);
+      return saveSeriesLayout(db,id,record,[safeSlug(record.slug),text(record.title,"标题",200),text(record.description,"简介",3000),safeUrl(record.coverUrl),level,level==="public"?1:0,number(record.sortOrder)],saveAllPhotos);
     }
     const level=access(record.access),narrative=await narrativeForSave(db,id,record),hasNarrative=narrative!==null;
     const json=hasNarrative?JSON.stringify(narrative):emptyNarrativeJson;
