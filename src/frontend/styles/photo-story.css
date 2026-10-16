@@ -1,6 +1,6 @@
 /* Photography story body: one layout owner, independent of cover typography. */
 .story-editorial {
-  --story-width: min(1420px, var(--site-width));
+  --story-width: var(--site-width);
   --story-row-gap: 64px;
   --story-image-gap: 24px;
 }
@@ -48,7 +48,7 @@
 }
 
 @media (max-width: 767px) {
-  .story-editorial { --story-width: calc(100% - 40px); --story-row-gap: 32px; --story-image-gap: 32px; }
+  .story-editorial { --story-row-gap: 32px; --story-image-gap: 32px; }
   .story-editorial .story-lede { padding-top: 32px; }
   .story-lede-label { margin-bottom: 16px; font-size: 14px; }
   .story-lede-summary { font-size: 17px; }
