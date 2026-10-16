@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 const source = await readFile(new URL("../src/shared/photo-story-layout.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
-const { buildPhotoStoryRows, photoAspectRatio } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const { buildPhotoStoryRows, buildPhotoStorySections, photoAspectRatio } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const photo = (id, width = 1200, height = 1800) => ({ id, width, height });
 
 test("empty and single-photo stories have a natural layout", () => {
@@ -60,4 +60,20 @@ test("large stories keep every original object exactly once and do not mutate in
   assert.equal(items.length, photos.length);
   items.forEach((item, i) => { assert.equal(item.photo, photos[i]); assert.equal(item.index, i); });
   assert.ok(rows.every(row => row.items.length <= 2));
+});
+
+test("chapter boundaries flush rows while global indices and photo order remain continuous", () => {
+  const photos = Array.from({length: 7}, (_, i) => photo(`p${i}`));
+  const chapters = [{id:'b',beforePhotoId:'p3',title:'Second',body:''},{id:'a',beforePhotoId:'p1',title:'First',body:''}];
+  const sections = buildPhotoStorySections(photos, chapters);
+  assert.deepEqual(sections.map(section => section.chapter?.id), [undefined, 'a', 'b']);
+  assert.deepEqual(sections.flatMap(section => section.rows.flatMap(row => row.items.map(item => item.index))), [0,1,2,3,4,5,6]);
+  assert.deepEqual(sections.map(section => section.rows.flatMap(row => row.items.map(item => item.photo.id))), [['p0'],['p1','p2'],['p3','p4','p5','p6']]);
+});
+
+test("blank chapters do not alter the pure-photo layout and chapters follow their anchor after reordering", () => {
+  const photos = [photo('p1'),photo('p2'),photo('p3')];
+  assert.deepEqual(buildPhotoStorySections(photos,[{id:'blank',beforePhotoId:'p2',title:' ',body:'\n'}])[0].rows,buildPhotoStoryRows(photos));
+  const sections = buildPhotoStorySections([photos[2],photos[0],photos[1]],[{id:'a',beforePhotoId:'p3',title:'Chapter',body:''}]);
+  assert.equal(sections[0].chapter.id,'a');assert.equal(sections[0].rows[0].items[0].photo.id,'p3');
 });

@@ -1,8 +1,9 @@
 import { defaultSiteCopy, type SiteCopy } from "@/shared/site-copy";
+import type { SeriesNarrative } from "@/shared/series-narrative";
 export type SyncFields = { version?: number; updatedAt?: number; deletedAt?: number | null };
 export type Photo = SyncFields & { id: string; seriesId: string; imageUrl: string; originalUrl: string; width: number; height: number; alt: string; caption: string; location: string; takenAt: string; sortOrder: number };
 export type AccessLevel = "draft" | "private" | "public";
-export type Series = SyncFields & { id: string; slug: string; title: string; description: string; coverUrl: string; access: AccessLevel; sortOrder: number; photos: Photo[] };
+export type Series = SyncFields & { id: string; slug: string; title: string; description: string; coverUrl: string; access: AccessLevel; sortOrder: number; photos: Photo[]; narrative?: SeriesNarrative };
 export type Essay = SyncFields & { id: string; slug: string; title: string; excerpt: string; body: string; access: AccessLevel; publishedAt: string; sortOrder: number };
 export type Favorite = SyncFields & { id: string; title: string; category: string; note: string; imageUrl: string; url: string; access: AccessLevel; sortOrder: number };
 export type AboutContent = { title: string; body: string; note: string };

@@ -1,6 +1,7 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const series = sqliteTable("series", {
+  narrative: text("narrative_json").notNull().default('{"intro":"","chapters":[],"closing":""}'),
   id: text("id").primaryKey(), slug: text("slug").notNull(), title: text("title").notNull(), description: text("description").notNull().default(""), coverUrl: text("cover_url").notNull().default(""), access: text("access").notNull().default("draft"), published: integer("published", { mode: "boolean" }).notNull().default(true), sortOrder: integer("sort_order").notNull().default(0), version: integer("version").notNull().default(1), updatedAt: integer("updated_at").notNull().default(0), deletedAt: integer("deleted_at"),
 }, (table) => [uniqueIndex("idx_series_slug").on(table.slug), index("idx_series_published_order").on(table.published, table.sortOrder), index("idx_series_access_order").on(table.access, table.sortOrder)]);
 export const photos = sqliteTable("photos", {

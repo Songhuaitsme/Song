@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const session = await getAdminSession(request);
   if (!session || !validateCsrf(request, session)) return Response.json({ error: "无权访问" }, { status: 403 });
   try {
-    const body = await request.json() as { action?: string; entity?: "series"|"photo"|"essay"|"favorite"|"about"|"copy"; record?: Record<string,unknown>; id?: string; ids?: unknown; access?: unknown; textFormat?:{key:string;style:TextFormat;page?:CopyPage;role?:TextRole} };
+    const body = await request.json() as { action?: string; entity?: "series"|"photo"|"essay"|"favorite"|"about"|"copy"; record?: Record<string,unknown>; id?: string; chapterResolution?: { beforePhotoId: string | null; version?: number }; ids?: unknown; access?: unknown; textFormat?:{key:string;style:TextFormat;page?:CopyPage;role?:TextRole} };
     if (body.action === "set-access") {
       let input;
       try { input = validateBulkAccess(body); }
@@ -25,8 +25,8 @@ export async function POST(request: Request) {
     if (body.entity === "about" && body.action === "upsert" && body.record) { const about = await saveAboutContent(body.record); if(formattedCopy)await saveSiteCopy(formattedCopy as unknown as Record<string,unknown>); return Response.json({ ok: true, about }); }
     if (body.entity === "about") return Response.json({ error: "操作无效" }, { status: 400 });
     if (!body.entity || !["series","photo","essay","favorite"].includes(body.entity)) return Response.json({ error: "内容类型无效" }, { status: 400 });
-    if (body.action === "delete" && body.id) { await deleteEntity(body.entity, body.id); return Response.json({ ok: true }); }
+    if (body.action === "delete" && body.id) { const result = await deleteEntity(body.entity, body.id, body.chapterResolution); return Response.json({ ok: true, ...result }); }
     if (body.action === "upsert" && body.record) { const result = await upsertEntity(body.entity, body.record); if(formattedCopy)await saveSiteCopy(formattedCopy as unknown as Record<string,unknown>); return Response.json({ ok: true, ...result }); }
     return Response.json({ error: "操作无效" }, { status: 400 });
-  } catch (error) { console.error(error); return Response.json({ error: error instanceof Error ? error.message : "保存失败" }, { status: 500 }); }
+  } catch (error) { console.error(error); return Response.json({ error: error instanceof Error ? error.message : "保存失败" }, { status: error instanceof Error && "status" in error && error.status === 409 ? 409 : 500 }); }
 }

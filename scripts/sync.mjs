@@ -1,3 +1,4 @@
+import { normalizeSyncRow } from "./lib/sync-content.mjs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createHash } from "node:crypto";
@@ -8,7 +9,7 @@ const [localExport,remoteExport]=await Promise.all([syncRequest(local,"/api/sync
 if(localExport.schemaVersion!==remoteExport.schemaVersion)throw new Error("本地与线上数据库结构版本不一致，已停止同步");
 await mkdir(resolve("var","backups"),{recursive:true});const stamp=new Date().toISOString().replaceAll(":","-");await Promise.all([writeFile(resolve("var","backups",`${stamp}-pre-sync-local.json`),JSON.stringify(localExport,null,2)),writeFile(resolve("var","backups",`${stamp}-pre-sync-production.json`),JSON.stringify(remoteExport,null,2))]);
 let state={hashes:{}},hasState=false;try{state=JSON.parse(await readFile(statePath,"utf8"));hasState=true;}catch{}
-const normalize=row=>{const copy={...row};delete copy.version;delete copy.updated_at;return copy;};const hash=row=>createHash("sha256").update(JSON.stringify(normalize(row))).digest("hex");
+const normalize=normalizeSyncRow;const hash=row=>createHash("sha256").update(JSON.stringify(normalize(row))).digest("hex");
 const flatten=data=>{const map=new Map();for(const[entity,rows]of Object.entries(data.records))for(const row of rows)map.set(`${entity}:${row.id??row.key}`,{entity,row});return map;};
 const left=flatten(localExport),right=flatten(remoteExport),keys=new Set([...left.keys(),...right.keys()]),toLocal=[],toRemote=[],conflicts=[];
 for(const key of keys){const l=left.get(key),r=right.get(key),baseline=state.hashes[key],lh=l&&hash(l.row),rh=r&&hash(r.row);if(lh===rh)continue;if(!hasState){if(l&&r)toLocal.push({entity:r.entity,data:{...r.row,version:Number(l.row.version)+1,updated_at:Date.now()},baseVersion:Number(l.row.version)});else if(l)toRemote.push({entity:l.entity,data:{...l.row,version:1,updated_at:Date.now()},baseVersion:0});else if(r)toLocal.push({entity:r.entity,data:{...r.row,version:1,updated_at:Date.now()},baseVersion:0});continue;}const localChanged=lh!==baseline,remoteChanged=rh!==baseline;if(localChanged&&remoteChanged){conflicts.push(key);if(l&&r)toLocal.push({entity:r.entity,data:{...r.row,version:Number(l.row.version)+1,updated_at:Date.now()},baseVersion:Number(l.row.version)-1});continue;}if(localChanged&&l){toRemote.push({entity:l.entity,data:{...l.row,version:Number(r?.row.version??0)+1,updated_at:Date.now()},baseVersion:Number(r?.row.version??0)});}else if(remoteChanged&&r){toLocal.push({entity:r.entity,data:{...r.row,version:Number(l?.row.version??0)+1,updated_at:Date.now()},baseVersion:Number(l?.row.version??0)});}}

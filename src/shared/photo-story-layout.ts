@@ -1,3 +1,4 @@
+import type { SeriesChapter } from "./series-narrative";
 type PhotoDimensions = { width: number; height: number };
 
 export type StoryPhoto<T> = { photo: T; index: number; aspectRatio: number };
@@ -9,12 +10,12 @@ export function photoAspectRatio(photo: PhotoDimensions): number {
 }
 
 /** Group adjacent photos without changing their order or cropping their composition. */
-export function buildPhotoStoryRows<T extends PhotoDimensions>(photos: readonly T[]): PhotoStoryRow<T>[] {
+export function buildPhotoStoryRows<T extends PhotoDimensions>(photos: readonly T[], startIndex = 0): PhotoStoryRow<T>[] {
   const rows: PhotoStoryRow<T>[] = [];
   let pending: StoryPhoto<T> | undefined;
   const single = (item: StoryPhoto<T>): PhotoStoryRow<T> => ({ kind: item.aspectRatio < 1 ? "portrait" : "single", items: [item] });
   photos.forEach((photo, index) => {
-    const item = { photo, index, aspectRatio: photoAspectRatio(photo) };
+    const item = { photo, index: index + startIndex, aspectRatio: photoAspectRatio(photo) };
     if ((index === 0 && item.aspectRatio > 1) || item.aspectRatio >= 2) {
       if (pending) rows.push(single(pending));
       pending = undefined;
@@ -26,4 +27,17 @@ export function buildPhotoStoryRows<T extends PhotoDimensions>(photos: readonly 
   });
   if (pending) rows.push(single(pending));
   return rows;
+}
+
+export function buildPhotoStorySections<T extends PhotoDimensions & { id: string }>(photos: readonly T[], chapters: readonly SeriesChapter[] = []) {
+  const anchors = new Map(chapters.filter(chapter => chapter.title.trim() || chapter.body.trim()).map(chapter => [chapter.beforePhotoId, chapter]));
+  const sections: { chapter?: SeriesChapter; rows: PhotoStoryRow<T>[] }[] = [];
+  let start = 0, chapter: SeriesChapter | undefined;
+  const flush = (end: number) => { if (end > start) sections.push({ chapter, rows: buildPhotoStoryRows(photos.slice(start, end), start) }); };
+  photos.forEach((photo, index) => {
+    const nextChapter = anchors.get(photo.id);
+    if (nextChapter) { flush(index); start = index; chapter = nextChapter; }
+  });
+  flush(photos.length);
+  return sections;
 }

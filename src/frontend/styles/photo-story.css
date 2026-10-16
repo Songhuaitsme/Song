@@ -10,6 +10,19 @@
 .story-lede-summary { margin: 0; font-family: var(--detail-font); font-size: 17px; line-height: 2; white-space: pre-line; overflow-wrap: anywhere; }
 .story-editorial .photo-story { width: var(--story-width); display: grid; gap: var(--story-row-gap); margin: 64px auto; }
 .story-photo-row { display: grid; grid-template-columns: var(--story-columns); gap: var(--story-image-gap); align-items: start; min-width: 0; }
+.story-photo-section { min-width: 0; }
+.story-photo-section + .story-photo-section { margin-top: 16px; }
+.story-section-rows { display: grid; gap: var(--story-row-gap); }
+.story-chapter { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: start; gap: 40px; margin-bottom: 32px; }
+.story-chapter-heading > p { margin: 0 0 16px; color: var(--quiet); font-size: 12px; letter-spacing: .14em; }
+.story-chapter-title { margin: 0; font-size: 28px; font-weight: 400; line-height: 1.5; text-wrap: balance; white-space: pre-line; }
+.story-prose { min-width: 0; max-width: 640px; font-family: "Songti SC", "SimSun", "STSong", serif; font-size: 17px; line-height: 2; overflow-wrap: anywhere; }
+.story-prose p { margin: 0 0 1.25em; white-space: pre-line; }
+.story-prose p:last-child { margin-bottom: 0; }
+.story-intro > p + p { margin-top: 1.25em; }
+.story-writing-link { display: inline-block; margin-top: 16px; color: var(--jade); font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.story-editorial .story-closing { width: min(680px, var(--story-width)); margin: 16px auto 80px; }
+.story-closing-label { margin: 0 0 20px; color: var(--quiet); font-size: 12px; letter-spacing: .12em; }
 .story-photo-row-portrait { width: min(100%, 640px); margin-inline: auto; }
 .story-photo { min-width: 0; margin: 0; }
 .story-image-button { display: block; width: 100%; padding: 0; border: 0; background: var(--paper-deep); cursor: zoom-in; }
@@ -30,6 +43,12 @@
   .story-lede-summary { font-size: 15.2px; }
   .story-editorial .photo-story { margin-block: 32px; }
   .story-photo-row { grid-template-columns: minmax(0, 1fr); }
+  .story-photo-section + .story-photo-section { margin-top: 16px; }
+  .story-chapter { grid-template-columns: minmax(0, 1fr); gap: 20px; margin-bottom: 24px; }
+  .story-chapter-title { font-size: 22px; }
+  .story-chapter-heading > p { margin-bottom: 10px; font-size: 11px; }
+  .story-prose { font-size: 15.68px; }
+  .story-editorial .story-closing { margin-top: 16px; margin-bottom: 48px; }
   .story-photo-row-portrait { width: 100%; }
   .story-photo figcaption { margin-top: 12px; }
   .story-photo-caption { font-size: 14.4px; }

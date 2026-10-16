@@ -11,7 +11,7 @@ export function visitorContent(content: SiteContent): SiteContent {
   return {
     ...content,
     series: content.series.filter(visible).map((item) => item.access === "private"
-      ? { ...item, coverUrl: "", photos: [] }
+      ? { ...item, coverUrl: "", photos: [], narrative: undefined }
       : item),
     essays: content.essays.filter(visible).map((item) => item.access === "private"
       ? { ...item, body: "" }

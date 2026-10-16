@@ -1,0 +1,1 @@
+ALTER TABLE `series` ADD `narrative_json` text DEFAULT '{"intro":"","chapters":[],"closing":""}' NOT NULL;
