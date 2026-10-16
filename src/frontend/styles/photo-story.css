@@ -1,6 +1,6 @@
 /* Photography story body: one layout owner, independent of cover typography. */
 .story-editorial {
-  --story-width: min(1200px, var(--site-width));
+  --story-width: min(1420px, var(--site-width));
   --story-row-gap: 64px;
   --story-image-gap: 24px;
 }
