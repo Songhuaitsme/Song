@@ -46,7 +46,7 @@ export async function validateNarrativeSync(db: D1Database, changes: SyncChange[
 }
 
 export function syncVersionGuard(db: D1Database, changes: SyncChange[]) {
-  const cases = ["series", "photos", "essays", "favorites", "site_settings", "media_assets"].map(table => `WHEN '${table}' THEN COALESCE((SELECT version FROM ${table} WHERE ${table === "site_settings" ? "key" : "id"}=json_extract(c.value,'$.id')),0)`).join(" ");
+  const cases = ["series", "photos", "essays", "favorites", "site_settings", "media_assets", "guestbook_messages"].map(table => `WHEN '${table}' THEN COALESCE((SELECT version FROM ${table} WHERE ${table === "site_settings" ? "key" : "id"}=json_extract(c.value,'$.id')),0)`).join(" ");
   // A failed assertion aborts the entire D1 batch before it can write any rows.
   return db.prepare(`SELECT CASE WHEN EXISTS(SELECT 1 FROM json_each(?) c WHERE CASE json_extract(c.value,'$.entity') ${cases} END != json_extract(c.value,'$.version') OR (json_extract(c.value,'$.photoCount') IS NOT NULL AND (SELECT COUNT(*) FROM photos WHERE series_id=json_extract(c.value,'$.id') AND deleted_at IS NULL)!=json_extract(c.value,'$.photoCount'))) THEN json('sync-version-conflict') ELSE 1 END AS valid`).bind(JSON.stringify(changes.map(change => ({ entity: change.entity, id: change.data.id ?? change.data.key, version: change.baseVersion, photoCount: change.data.photoCount }))));
 }

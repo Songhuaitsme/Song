@@ -4,6 +4,8 @@ import { isHexColor, validateTextStandards, type TextStandards } from "@/shared/
 export const copyFields = [
   ["global","brand","品牌字样",siteConfig.defaultCopy.brand],
   ["global","navHome","导航：首页","首页"],
+  ["global","navGuestbook","导航：留言","留言"],
+  ["guestbook","guestbookTitle","留言页标题","留言"],["guestbook","guestbookIntro","留言页介绍","很高兴在这里遇见你，欢迎留下想法。"],
   ["global","navSeries","导航：摄影","摄影"],["global","navEssays","导航：随笔","随笔"],["global","navCollection","导航：收藏","收藏"],["global","navAbout","导航：关于",siteConfig.defaultCopy.navAbout],["global","studio","工作室入口","工作室"],["global","copyright","页脚版权文字",siteConfig.copyright],
   ["home","homeImageLabel","封面图片标签","SERIES 01"],["home","homeSeriesLabel","摄影栏目标签","01 / 摄影"],["home","enterSeries","进入系列按钮",siteConfig.defaultCopy.enterSeries],["home","homeEssayLabel","随笔栏目标签","02 / 随笔"],["home","readEssay","阅读随笔按钮","阅读全文"],["home","homeCollectionLabel","收藏栏目标签","03 / 收藏"],["home","homeCollectionTitle","收藏栏目标题","最近留下的东西"],["home","homeEmptyLabel","空页面标签","SONG / 影像与文字"],["home","homeEmptyTitle","空页面标题","内容正在整理中"],["home","homeEmptyDescription","空页面说明","公开内容会在这里出现。"],
   ["series","seriesLabel","摄影首图标签","SONFORU / SERIES 01"],["series","readSeries","摄影阅读按钮","READ MORE"],["series","photoUnit","照片数量单位","张照片"],["series","seriesListTitle","摄影列表标题","摄影故事"],["series","seriesListIntro","摄影列表说明","沿着地点、光线与记忆继续观看。"],["series","seriesAuthor","摄影署名","SONG"],["series","seriesNumberLabel","系列编号前缀","SERIES"],["series","photographs","英文照片单位","PHOTOGRAPHS"],["series","seriesEmpty","摄影空列表说明","暂时没有公开的摄影系列。"],
@@ -12,7 +14,7 @@ export const copyFields = [
   ["collection","collectionLabel","收藏栏目标签","CABINET / 收藏"],["collection","collectionTitle","收藏页标题","喜欢的东西"],["collection","collectionIntro","收藏页说明","书、影像、习惯，以及值得反复回看的细节。"],["collection","collectionSource","收藏来源按钮","查看来源"],["collection","collectionEmpty","收藏空列表说明","暂时没有公开的收藏。"],["about","aboutLabel","关于栏目标签","ABOUT / 关于"],
 ] as const;
 export type CopyKey = typeof copyFields[number][1];
-export const pageGroups = [ ["global","导航与页脚"],["home","首页"],["series","摄影目录"],["story","摄影详情"],["essays","随笔目录"],["essay","随笔详情"],["collection","收藏"],["about","关于"] ] as const;
+export const pageGroups = [ ["global","导航与页脚"],["home","首页"],["series","摄影目录"],["story","摄影详情"],["essays","随笔目录"],["essay","随笔详情"],["collection","收藏"],["guestbook","留言"],["about","关于"] ] as const;
 export type CopyPage = typeof pageGroups[number][0];
 export type CopyRow = { id: string; text: string };
 export const fontOptions = [["song","宋体"],["sans","黑体"],["kai","楷体"],["hei","微软雅黑"]] as const;

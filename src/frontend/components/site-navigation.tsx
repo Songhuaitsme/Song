@@ -6,7 +6,7 @@ import { EditableText } from "@/frontend/components/editable-text";
 import type { ViewerContext } from "@/backend/auth/admin-auth";
 import type { SiteCopy } from "@/shared/site-copy";
 
-const links = [["/", "navHome"], ["/series", "navSeries"], ["/essays", "navEssays"], ["/collection", "navCollection"], ["/about", "navAbout"]] as const;
+const links = [["/", "navHome"], ["/series", "navSeries"], ["/essays", "navEssays"], ["/collection", "navCollection"], ["/guestbook", "navGuestbook"], ["/about", "navAbout"]] as const;
 
 export function SiteNavigation({ copy, viewer, returnTo }: { copy: SiteCopy["values"]; viewer: ViewerContext; returnTo: string }) {
   const [open, setOpen] = useState(false);

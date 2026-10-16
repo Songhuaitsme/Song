@@ -3,10 +3,11 @@ import { readNarrative } from "@/shared/series-narrative";
 import { readLayout } from "@/shared/series-layout";
 import { env } from "cloudflare:workers";
 import { getDatabase } from "@/backend/content/content-store";
+import { validateMessageRow } from "@/shared/guestbook";
 
-export const SYNC_SCHEMA_VERSION = 6;
-export type SyncEntity = "series"|"photos"|"essays"|"favorites"|"site_settings"|"media_assets";
-const tables:SyncEntity[]=["series","photos","essays","favorites","site_settings","media_assets"];
+export const SYNC_SCHEMA_VERSION = 7;
+export type SyncEntity = "series"|"photos"|"essays"|"favorites"|"site_settings"|"media_assets"|"guestbook_messages";
+const tables:SyncEntity[]=["series","photos","essays","favorites","site_settings","media_assets","guestbook_messages"];
 
 function secret(){try{return env.SYNC_SECRET??"";}catch{return "";}}
 function constantTimeTextEqual(a:string,b:string){const left=new TextEncoder().encode(a),right=new TextEncoder().encode(b),length=Math.max(left.length,right.length);let difference=left.length^right.length;for(let i=0;i<length;i++)difference|=(left[i]??0)^(right[i]??0);return difference===0;}
@@ -26,6 +27,7 @@ export async function importSync(payload:{schemaVersion?:number;changes?:SyncCha
   const staged=[];const blocked=new Set<string>();
   for(const change of payload.changes??[]){
     const entity=table(change.entity),data=change.data,id=String(data.id??data.key??"");
+    if(entity==="guestbook_messages")validateMessageRow(data);
     if(!id||!Number.isInteger(change.baseVersion)||change.baseVersion<0)throw new Error("同步记录或基础版本无效");
     const current=await db.prepare(`SELECT * FROM ${entity} WHERE ${entity==="site_settings"?"key":"id"}=?`).bind(id).first<Record<string,unknown>>();
     const groups=entity==="series"?[id]:entity==="photos"?[String(data.series_id),...(current?[String(current.series_id)]:[])]:[];
@@ -57,6 +59,10 @@ export async function importSync(payload:{schemaVersion?:number;changes?:SyncCha
 }
 
 function prepareSyncRow(db:D1Database,entity:SyncEntity,d:Record<string,unknown>){
+  if(entity==="guestbook_messages"){
+    validateMessageRow(d);
+    return db.prepare("INSERT INTO guestbook_messages(id,nickname,body,reply,visibility,created_at,replied_at,version,updated_at,deleted_at) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET nickname=excluded.nickname,body=excluded.body,reply=excluded.reply,visibility=excluded.visibility,created_at=excluded.created_at,replied_at=excluded.replied_at,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.nickname,d.body,d.reply,d.visibility,d.created_at,d.replied_at??null,d.version,d.updated_at,d.deleted_at??null);
+  }
   if(entity==="series"){
     const present=d.narrative_json!==undefined,json=JSON.stringify(readNarrative(d.narrative_json)),hasLayout=d.layout_json!==undefined,layout=readLayout(d.layout_json);
     return db.prepare("INSERT INTO series (id,slug,title,description,cover_url,access,published,sort_order,narrative_json,layout_json,version,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,description=excluded.description,cover_url=excluded.cover_url,access=excluded.access,published=excluded.published,sort_order=excluded.sort_order,narrative_json=CASE WHEN ?=1 THEN excluded.narrative_json ELSE series.narrative_json END,layout_json=CASE WHEN ?=1 THEN excluded.layout_json ELSE series.layout_json END,version=excluded.version,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at").bind(d.id,d.slug,d.title,d.description,d.cover_url,d.access,d.published,d.sort_order,json,layout?JSON.stringify(layout):null,d.version,d.updated_at,d.deleted_at??null,present?1:0,hasLayout?1:0);
@@ -92,6 +98,7 @@ export async function resolveConflict(id:string,resolution:"local"|"remote"|"man
   if(resolution==="local"){await finish.run();return;}
   const entity=table(String(row.entity)),selected=resolution==="remote"?JSON.parse(String(row.remote_data)):manual;if(!selected)throw new Error("请提供合并后的内容");
   const current=await db.prepare(`SELECT version FROM ${entity} WHERE ${entity==="site_settings"?"key":"id"}=?`).bind(row.record_id).first<{version:number}>();
+  if(Number(current?.version??0)!==Number(row.local_version))throw new Error("冲突记录之后又有新编辑，请保留本地版本并重新同步，避免覆盖新内容");
   const data={...selected,[entity==="site_settings"?"key":"id"]:row.record_id,version:Number(current?.version??0)+1,updated_at:Date.now()};
   const change={entity,data,baseVersion:Number(current?.version??0)};
   const dependencies=await validateNarrativeSync(db,[change]);

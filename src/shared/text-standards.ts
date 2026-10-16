@@ -94,6 +94,10 @@ export const standardDefinitions: TextStandardDefinition[] = [
   define("about", "body", "介绍正文", "用影像与文字，记下走过的地方。", 24, "24px", "20px"),
   define("about", "caption", "补充说明与联系方式", "欢迎来信。", 18, "18px"),
   define("about", "label", "栏目标签", "ABOUT / 关于", 16, "16px", "14px"),
+  define("guestbook", "pageTitle", "留言页标题", "留言", 64, "64px", "40px"),
+  define("guestbook", "summary", "留言页介绍", "欢迎留下想法。", 20, "20px", "17px"),
+  define("guestbook", "body", "留言与主人回复", "感谢你留下的片段。", 18, "18px", "17px"),
+  define("guestbook", "label", "昵称与时间", "访客 · 今天", 14, "14px"),
   ...(["home", "series", "essays", "collection"] as const).map(page => define(page, "body", "新增文字段落", "记下今天的一点片段。", 17, "17px", "15.68px")),
 ];
 export const standardId = (page: CopyPage, role: TextRole) => `${page}:${role}`;

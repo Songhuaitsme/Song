@@ -124,7 +124,7 @@ test('API rejects missing admin/CSRF and reports anchor conflicts instead of suc
   try { const response = await request({ action: 'delete', entity: 'photo', id: 'p2' }); assert.equal(response.status, 409); assert.match((await response.json()).error, /章节起点/); } finally { console.error = originalError; }
 });
 test('sync schema 5 exports writing and imports it without losing intro, chapters or closing', async () => {
-  seed(); await save(narrative()); const snapshot = await sync.exportSync(); assert.equal(snapshot.schemaVersion, 6); const exported = snapshot.records.series.find(item => item.id === 'story'); assert.deepEqual(JSON.parse(exported.narrative_json), narrative());
+  seed(); await save(narrative()); const snapshot = await sync.exportSync(); assert.equal(snapshot.schemaVersion, 7); const exported = snapshot.records.series.find(item => item.id === 'story'); assert.deepEqual(JSON.parse(exported.narrative_json), narrative());
   const changed = { ...exported, title: '同步后的标题', narrative_json: JSON.stringify({ ...narrative(), closing: '同步后的收尾' }), version: exported.version + 1 };
   assert.equal((await sync.importSync({ schemaVersion: sync.SYNC_SCHEMA_VERSION, changes: [{ entity: 'series', data: changed, baseVersion: exported.version }] })).applied.length, 1); assert.equal(row().title, changed.title); assert.equal(writing.readNarrative(row().narrative_json).closing, '同步后的收尾');
   await assert.rejects(sync.importSync({ schemaVersion: 3, changes: [] }), /结构版本/);
@@ -230,10 +230,10 @@ test('width save is version guarded, preserves captions, and old series requests
 
 test('widths survive sync, grouped conflict resolution and backup restoration; old sync is rejected',async()=>{
   seed();const value=manual();value.groups[0].widthPercent=55;await store.upsertEntity('series',layoutRecord(value));
-  const snapshot=await sync.exportSync();assert.equal(snapshot.schemaVersion,6);assert.equal(JSON.parse(snapshot.records.series.find(s=>s.id==='story').layout_json).groups[0].widthPercent,55);
+  const snapshot=await sync.exportSync();assert.equal(snapshot.schemaVersion,7);assert.equal(JSON.parse(snapshot.records.series.find(s=>s.id==='story').layout_json).groups[0].widthPercent,55);
   const before=row(),incoming=structuredClone(value);incoming.groups[0].widthPercent=85;
   await assert.rejects(sync.importSync({schemaVersion:5,changes:[]}),/版本不一致/);
-  await sync.importSync({schemaVersion:6,changes:[{entity:'series',data:{...before,layout_json:JSON.stringify(incoming)},baseVersion:before.version-1}]});
+  await sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes:[{entity:'series',data:{...before,layout_json:JSON.stringify(incoming)},baseVersion:before.version-1}]});
   const [conflict]=await sync.listConflicts();await sync.resolveConflict(conflict.id,'remote');assert.equal(JSON.parse(row().layout_json).groups[0].widthPercent,85);
   const restored=buildRestoreChanges(snapshot,await sync.exportSync());await sync.importSync(restored);assert.equal(JSON.parse(row().layout_json).groups[0].widthPercent,55);
 });
@@ -336,7 +336,7 @@ test('private layout and photo identifiers never reach visitor content or HTML d
   const owner=await store.getSiteContent(true),visitor=await store.getSiteContent(false);assert.ok(owner.series.find(s=>s.id==='story').layout);const hidden=visitor.series.find(s=>s.id==='story');assert.equal(hidden.layout,undefined);assert.deepEqual(hidden.photos,[]);
 });
 test('sync schema 5 round-trips custom groups, blocks orphan layouts and preserves layouts for old backup requests',async()=>{
-  seed();await store.upsertEntity('series',layoutRecord(manual()));const snapshot=await sync.exportSync(),current=row();assert.equal(snapshot.schemaVersion,6);
+  seed();await store.upsertEntity('series',layoutRecord(manual()));const snapshot=await sync.exportSync(),current=row();assert.equal(snapshot.schemaVersion,7);
   const layout=JSON.parse(current.layout_json);layout.groups[0].gap='seamless';const changed={...current,layout_json:JSON.stringify(layout),version:current.version+1};
   await sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes:[{entity:'series',data:changed,baseVersion:current.version}]});assert.equal(JSON.parse(row().layout_json).groups[0].gap,'seamless');
   await assert.rejects(sync.importSync({schemaVersion:sync.SYNC_SCHEMA_VERSION,changes:[{entity:'photos',data:{...photo('p1'),deleted_at:100,version:photo('p1').version+1},baseVersion:photo('p1').version}]}),/排版照片/);assert.equal(photo('p1').deleted_at,null);

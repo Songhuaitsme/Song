@@ -1,5 +1,5 @@
 export function buildRestoreChanges(backup, current) {
-  if (backup.schemaVersion !== current.schemaVersion && !([3,4,5].includes(backup.schemaVersion) && current.schemaVersion >= backup.schemaVersion && current.schemaVersion <= 6)) throw new Error("备份结构版本不兼容，请先升级或转换备份");
+  if (backup.schemaVersion !== current.schemaVersion && !([3,4,5,6].includes(backup.schemaVersion) && current.schemaVersion >= backup.schemaVersion && current.schemaVersion <= 7)) throw new Error("备份结构版本不兼容，请先升级或转换备份");
   const existing = new Map();
   for (const [entity, rows] of Object.entries(current.records)) for (const row of rows) existing.set(`${entity}:${row.id ?? row.key}`, row);
   const changes = [];

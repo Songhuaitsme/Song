@@ -1,0 +1,49 @@
+.guestbook-heading, .guestbook-content { width: min(760px, var(--site-width)); margin-inline: auto; }
+.guestbook-heading { padding-top: 64px; }
+.guestbook-heading h1 { margin: 0 0 24px; font-family: "Songti SC", "SimSun", serif; font-size: 64px; font-weight: 400; line-height: 1.3; }
+.guestbook-heading > p { margin: 0; color: var(--quiet); font-size: 20px; line-height: 1.9; white-space: pre-line; overflow-wrap: anywhere; }
+.guestbook-content { padding: 48px 0 80px; }
+.guestbook-form { position: relative; padding: 28px; border: 1px solid var(--line); background: #fff6; border-radius: 4px; }
+.guestbook-form h2, .guestbook-list h2 { margin: 0; font-size: 22px; font-weight: 400; }
+.guestbook-form-note { margin: 8px 0 24px; color: var(--quiet); font-size: 14px; }
+.guestbook-form > label { display: flex; justify-content: space-between; gap: 16px; margin: 20px 0 8px; font-size: 16px; }
+.guestbook-form label span { color: var(--quiet); font-size: 14px; }
+.guestbook-form :is(input, textarea) { width: 100%; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 3px; color: var(--ink); background: var(--paper); font-size: 17px; line-height: 1.8; }
+.guestbook-form textarea { min-height: 170px; resize: vertical; }
+.guestbook-form input { min-height: 48px; }
+.guestbook-form :is(input, textarea):focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
+.guestbook-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.guestbook-submit { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+.guestbook-submit > p { flex: 1; min-width: 0; margin: 0; color: var(--jade); font-size: 14px; overflow-wrap: anywhere; }
+.guestbook-submit button, .guestbook-pagination button { min-height: 44px; padding-inline: 18px; font-size: 16px; }
+.guestbook-list { margin-top: 64px; }
+.guestbook-list-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.guestbook-list-heading > span, .guestbook-pagination, .guestbook-empty { color: var(--quiet); font-size: 14px; }
+.guestbook-message { padding-block: 28px; border-top: 1px solid var(--line); min-width: 0; }
+.guestbook-message-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--quiet); font-size: 14px; line-height: 1.7; }
+.guestbook-message-meta strong { font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
+.guestbook-message-meta time { font-size: 13px; }
+.guestbook-message-body, .guestbook-owner-reply > p { margin: 14px 0 0; font-size: 18px; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
+.guestbook-owner-reply { margin-top: 24px; border-left: 2px solid var(--jade); padding: 12px 20px; background: #3c554b06; }
+.guestbook-owner-reply strong { color: var(--jade); }
+.guestbook-pagination { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding-top: 24px; border-top: 1px solid var(--line); margin-top: 24px; }
+.guestbook-error { color: #98472e; font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.guestbook-error > p { margin-bottom: 12px; }
+.guestbook-empty { padding-block: 24px; }
+.guestbook-admin-list { margin-top: 24px; display: grid; gap: 24px; }
+.guestbook-admin-message { min-width: 0; padding: 24px; border: 1px solid var(--line); background: var(--paper); border-radius: 4px; }
+.studio-shell .guestbook-admin-message .guestbook-message-body { margin-bottom: 24px; }
+.guestbook-admin-message textarea { min-height: 110px; }
+.message-visibility { padding: 2px 8px; border-radius: 20px; font-size: 13px; }
+.message-visibility.is-public { background: #3c554b10; color: var(--jade); }
+.message-visibility.is-hidden { background: #a14d2b10; color: #98472e; }
+@media (max-width: 767px) {
+  .guestbook-heading { padding-top: 40px; }
+  .guestbook-heading h1 { font-size: 40px; margin-bottom: 20px; }
+  .guestbook-heading > p, .guestbook-message-body, .guestbook-owner-reply > p { font-size: 17px; }
+  .guestbook-content { padding-block: 32px 48px; }
+  .guestbook-form { padding: 20px; }
+  .guestbook-list { margin-top: 40px; }
+  .guestbook-admin-message { padding: 16px; }
+  .guestbook-owner-reply { padding-inline: 14px; }
+}

@@ -1,4 +1,5 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex, check } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 export const series = sqliteTable("series", {
   layout: text("layout_json"),
@@ -55,3 +56,11 @@ export const syncConflicts = sqliteTable("sync_conflicts", {
 export const syncRuns = sqliteTable("sync_runs", {
   id: text("id").primaryKey(), direction: text("direction").notNull(), status: text("status").notNull(), summary: text("summary").notNull().default(""), startedAt: integer("started_at").notNull(), finishedAt: integer("finished_at"),
 }, (table) => [index("idx_sync_runs_started").on(table.startedAt)]);
+
+export const guestbookMessages = sqliteTable("guestbook_messages", {
+  id: text("id").primaryKey(), nickname: text("nickname").notNull(), body: text("body").notNull(), reply: text("reply").notNull().default(""), visibility: text("visibility").notNull().default("public"), createdAt: integer("created_at").notNull(), repliedAt: integer("replied_at"), version: integer("version").notNull().default(1), updatedAt: integer("updated_at").notNull(), deletedAt: integer("deleted_at"),
+}, (table) => [check("guestbook_visibility", sql`${table.visibility} IN ('public','hidden')`), index("idx_guestbook_public_date").on(table.deletedAt, table.visibility, table.createdAt, table.id), index("idx_guestbook_updated").on(table.updatedAt)]);
+
+export const guestbookSubmissions = sqliteTable("guestbook_submissions", {
+  id: text("id").primaryKey(), sourceHash: text("source_hash").notNull(), contentHash: text("content_hash").notNull(), createdAt: integer("created_at").notNull(),
+}, (table) => [index("idx_guestbook_source_date").on(table.sourceHash, table.createdAt), index("idx_guestbook_source_content").on(table.sourceHash, table.contentHash, table.createdAt), index("idx_guestbook_submissions_expiry").on(table.createdAt)]);
