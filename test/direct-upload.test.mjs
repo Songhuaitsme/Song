@@ -37,6 +37,58 @@ test("modified, expired, and differently signed upload tickets cannot register f
   await assert.rejects(createDirectUpload(config, { ...metadata, size: 26 * 1024 * 1024 }, secret), /25MB/);
 });
 
+test("identical WebP source and display bytes share a single signed upload and display object", async () => {
+  const result = await createDirectUpload(config, { ...metadata, mimeType: "image/webp", size: 20, checksum: metadata.displayChecksum }, secret);
+  const payload = await readDirectUploadTicket(result.ticket, secret);
+  assert.equal(result.originalUploadUrl, result.displayUploadUrl);
+  assert.equal(payload.originalKey, payload.displayKey);
+  assert.match(payload.displayKey, /^media\/display\/[\w-]+\.webp$/);
+  for (const changes of [{ mimeType: "image/png" }, { size: 21 }, { checksum: "d".repeat(64) }]) {
+    const separate = await createDirectUpload(config, { ...metadata, mimeType: "image/webp", size: 20, checksum: metadata.displayChecksum, ...changes }, secret);
+    assert.notEqual(separate.originalUploadUrl, separate.displayUploadUrl);
+  }
+});
+
+test("browser transfers a shared compressed image once and still completes registration", async t => {
+  const clientSource = await readFile(new URL("../src/frontend/upload-media.ts", import.meta.url), "utf8");
+  const { uploadMediaMultipart } = await import(`data:text/javascript;base64,${Buffer.from(compile(clientSource)).toString("base64")}`);
+  let puts = 0, completed = false;
+  const file = new File(["compressed webp"], "photo.webp", { type: "image/webp" });
+  t.mock.method(globalThis, "fetch", async (url, request) => {
+    if (url === "/api/upload/direct") {
+      const body = JSON.parse(request.body);
+      if (body.action === "init") {
+        assert.equal(body.checksum, body.displayChecksum);
+        return Response.json({ enabled: true, ticket: "ticket", originalUploadUrl: "https://storage.test/shared", displayUploadUrl: "https://storage.test/shared" });
+      }
+      completed = true;
+      return Response.json({ id: "shared", imageUrl: "/display.webp", originalUrl: "/display.webp" });
+    }
+    puts++;
+    assert.equal(request.body, file);
+    assert.equal(request.credentials, "omit");
+    return new Response(null, { status: 200 });
+  });
+  const progress = [];
+  await uploadMediaMultipart({ original: file, display: file, width: 100, height: 100, csrfToken: "csrf", onProgress: value => progress.push(value) });
+  assert.equal(puts, 1); assert.equal(completed, true); assert.equal(progress.at(-1), 1);
+});
+
+test("an already registered image is reused without transferring bytes again", async t => {
+  const clientSource = await readFile(new URL("../src/frontend/upload-media.ts", import.meta.url), "utf8");
+  const { uploadMediaMultipart } = await import(`data:text/javascript;base64,${Buffer.from(compile(clientSource)).toString("base64")}`);
+  const existing = { id: "existing", imageUrl: "/api/assets/media/display/existing.webp", originalUrl: "/api/assets/media/display/existing.webp" };
+  let requests = 0;
+  t.mock.method(globalThis, "fetch", async (url, request) => {
+    requests++;
+    assert.equal(url, "/api/upload/direct"); assert.equal(JSON.parse(request.body).action, "init");
+    return Response.json({ enabled: true, existing });
+  });
+  const file = new File(["compressed webp"], "photo.webp", { type: "image/webp" });
+  assert.deepEqual(await uploadMediaMultipart({ original: file, display: file, width: 100, height: 100, csrfToken: "csrf" }), existing);
+  assert.equal(requests, 1);
+});
+
 test("browser sends image bytes to storage without app credentials, then registers the ticket", async t => {
   const clientSource = await readFile(new URL("../src/frontend/upload-media.ts", import.meta.url), "utf8");
   const { uploadMediaMultipart } = await import(`data:text/javascript;base64,${Buffer.from(compile(clientSource)).toString("base64")}`);

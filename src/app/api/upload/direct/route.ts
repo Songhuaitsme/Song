@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { getAdminSession, validateCsrf } from "@/backend/auth/admin-auth";
 import { createDirectUpload, directUploadConfigured, readDirectUploadTicket, type DirectUploadMetadata } from "@/storage/direct-upload";
-import { finishDirectUpload } from "@/storage/media-store";
+import { findExistingMedia, finishDirectUpload } from "@/storage/media-store";
 
 export async function POST(request: Request) {
   const session = await getAdminSession(request);
@@ -16,7 +16,9 @@ export async function POST(request: Request) {
         checksum: String(body.checksum ?? ""), displayChecksum: String(body.displayChecksum ?? ""),
         width: Number(body.width), height: Number(body.height), assignment: String(body.assignment ?? "unassigned"),
       };
-      return Response.json(await createDirectUpload(env, input, env.SESSION_SECRET ?? ""), { headers });
+      const upload = await createDirectUpload(env, input, env.SESSION_SECRET ?? "");
+      const existing = await findExistingMedia(input.checksum);
+      return Response.json(existing ? { enabled: true, existing } : upload, { headers });
     }
     if (body.action === "complete") {
       const ticket = await readDirectUploadTicket(String(body.ticket ?? ""), env.SESSION_SECRET ?? "");

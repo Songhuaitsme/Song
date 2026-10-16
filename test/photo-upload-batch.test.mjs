@@ -52,7 +52,7 @@ test("invalid types, empty and oversized files are rejected before decoding or u
   let prepared = 0;
   const invalid = new File(["text"], "notes.txt", { type: "text/plain" });
   const empty = new File([], "empty.jpg", { type: "image/jpeg" });
-  const large = new File([new Uint8Array(25 * 1024 * 1024 + 1)], "large.jpg", { type: "image/jpeg" });
+  const large = new File([new Uint8Array(100 * 1024 * 1024 + 1)], "large.jpg", { type: "image/jpeg" });
   const results = await uploadPhotoBatch([item("invalid", invalid), item("empty", empty), item("large", large)], {
     seriesId: "series-1", startOrder: 0,
     prepare: async () => { prepared++; return display; },
@@ -64,5 +64,22 @@ test("invalid types, empty and oversized files are rejected before decoding or u
   assert.deepEqual(results.map(result => result.state), ["error", "error", "error"]);
   assert.match(results[0].error, /JPEG/);
   assert.match(results[1].error, /为空/);
-  assert.match(results[2].error, /25MB/);
+  assert.match(results[2].error, /100MB/);
+});
+
+test("batch uploads the prepared compressed file and retains the source name for photo captions", async () => {
+  const source = new File([new Uint8Array(30 * 1024 * 1024)], "large-photo.jpg", { type: "image/jpeg" });
+  const compressed = new File(["small webp"], "large-photo.webp", { type: "image/webp" });
+  const results = await uploadPhotoBatch([item("compressed", source)], {
+    seriesId: "series-1", startOrder: 0,
+    prepare: async file => { assert.equal(file, source); return { ...display, original: compressed, blob: compressed }; },
+    upload: async (file, prepared) => {
+      assert.equal(file, compressed); assert.equal(prepared.blob, compressed);
+      return { id: "asset", imageUrl: "/display.webp", originalUrl: "/display.webp" };
+    },
+    save: async () => {}, onSaved: () => {}, onChange: () => {},
+  });
+  assert.equal(results[0].state, "done");
+  assert.equal(results[0].preparedSize, compressed.size);
+  assert.equal(results[0].photo.alt, "large-photo");
 });

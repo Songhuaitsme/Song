@@ -95,17 +95,22 @@ type UploadInput = {
 async function tryDirectUpload(input: UploadInput): Promise<UploadedMedia | null> {
   if (Date.now() < directDisabledUntil) return null;
   const [checksum, displayChecksum] = await Promise.all([sha256(input.original), sha256(input.display)]);
-  const session = await requestJson<{ enabled: boolean; ticket: string; originalUploadUrl: string; displayUploadUrl: string }>("/api/upload/direct", {
+  const session = await requestJson<{ enabled: boolean; existing?: UploadedMedia; ticket: string; originalUploadUrl: string; displayUploadUrl: string }>("/api/upload/direct", {
     method: "POST", headers: { "content-type": "application/json", "x-csrf-token": input.csrfToken },
     body: JSON.stringify({ action: "init", fileName: input.original.name, mimeType: input.original.type, size: input.original.size, displaySize: input.display.size, checksum, displayChecksum, width: input.width, height: input.height, assignment: input.assignment ?? "unassigned" }),
   });
   if (!session.enabled) { directDisabledUntil = Date.now() + 60000; return null; }
+  if (session.existing) return session.existing;
   const loaded = [0, 0], total = input.original.size + input.display.size;
   const report = (index: number, size: number) => (ratio: number) => {
     loaded[index] = Math.max(loaded[index], Math.min(1, ratio) * size);
     input.onProgress?.(.95 * (loaded[0] + loaded[1]) / total);
   };
-  const transfers = await Promise.allSettled([
+  const transfers = await Promise.allSettled(session.originalUploadUrl === session.displayUploadUrl ? [
+    putSignedObject(session.displayUploadUrl, input.display, "image/webp", ratio => {
+      report(0, input.original.size)(ratio); report(1, input.display.size)(ratio);
+    }),
+  ] : [
     putSignedObject(session.originalUploadUrl, input.original, input.original.type, report(0, input.original.size)),
     putSignedObject(session.displayUploadUrl, input.display, "image/webp", report(1, input.display.size)),
   ]);

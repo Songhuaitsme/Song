@@ -21,6 +21,9 @@ export async function createDirectUpload(config: Config, input: DirectUploadMeta
   if (![input.width, input.height].every(value => Number.isInteger(value) && value > 0 && value <= 100000) || input.assignment.length > 512) throw new Error("图片信息无效");
   const id = crypto.randomUUID(), ext = input.mimeType === "image/jpeg" ? "jpg" : input.mimeType === "image/png" ? "png" : "webp";
   const payload: DirectUploadTicket = { ...input, id, originalKey: `media/original/${id}.${ext}`, displayKey: `media/display/${id}.webp`, expiresAt: now + 600000 };
+  // Web-optimized uploads use identical bytes for both references: store and transfer once.
+  const sharedImage = input.mimeType === "image/webp" && input.size === input.displaySize && input.checksum === input.displayChecksum;
+  if (sharedImage) payload.originalKey = payload.displayKey;
   const encoded = encode(encoder.encode(JSON.stringify(payload)));
   const signature = await crypto.subtle.sign("HMAC", await signingKey(secret), encoder.encode("r2-direct-v1:" + encoded));
   const ticket = encoded + "." + encode(new Uint8Array(signature));
@@ -30,7 +33,8 @@ export async function createDirectUpload(config: Config, input: DirectUploadMeta
     url.searchParams.set("X-Amz-Expires", "600");
     return (await client.sign(new Request(url, { method: "PUT", headers: { "content-type": contentType } }), { aws: { signQuery: true, allHeaders: true } })).url;
   };
-  const [originalUploadUrl, displayUploadUrl] = await Promise.all([sign(payload.originalKey, input.mimeType), sign(payload.displayKey, "image/webp")]);
+  const displayUploadUrl = await sign(payload.displayKey, "image/webp");
+  const originalUploadUrl = sharedImage ? displayUploadUrl : await sign(payload.originalKey, input.mimeType);
   return { enabled: true as const, ticket, originalUploadUrl, displayUploadUrl };
 }
 

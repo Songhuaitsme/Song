@@ -5,7 +5,7 @@ import { Check, ImagePlus, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import type { Photo, Series, SiteContent } from "@/shared/content-model";
 import { uploadMediaMultipart } from "@/frontend/upload-media";
-import { resizeForWeb } from "@/frontend/resize-image";
+import { prepareImageForUpload, formatImageSize, type CompressionMode } from "@/frontend/resize-image";
 import { uploadPhotoBatch, type PhotoUploadItem } from "@/frontend/photo-upload-batch";
 import { Button } from "@/frontend/components/ui/button";
 
@@ -13,10 +13,11 @@ const labels: Record<PhotoUploadItem["state"], string> = {
   waiting: "等待上传", processing: "正在处理", uploading: "正在上传", saving: "正在保存", done: "已加入系列", error: "未完成",
 };
 
-export function SeriesPhotoUpload({ series, csrfToken, busy, onBusyChange, onPhotoAdded, onCoverChange }: {
+export function SeriesPhotoUpload({ series, csrfToken, busy, compressionMode, onBusyChange, onPhotoAdded, onCoverChange }: {
   series: Series;
   csrfToken: string;
   busy: boolean;
+  compressionMode: CompressionMode;
   onBusyChange(value: boolean): void;
   onPhotoAdded(photo: Photo): void;
   onCoverChange(url: string): void;
@@ -53,7 +54,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, onBusyChange, onPho
       }
       const startOrder = Math.max(0, ...savedSeries.photos.map(photo => photo.sortOrder), ...series.photos.map(photo => photo.sortOrder));
       const results = await uploadPhotoBatch(queue, {
-        seriesId: series.id, startOrder, prepare: resizeForWeb,
+        seriesId: series.id, startOrder, prepare: file => prepareImageForUpload(file, compressionMode),
         upload: (file, display, onProgress) => uploadMediaMultipart({
           original: file, display: display.blob, width: display.width, height: display.height,
           csrfToken, assignment: `series:${series.id}`, onProgress,
@@ -88,7 +89,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, onBusyChange, onPho
 
   return <section className="series-photo-upload" aria-label={`${series.title}的批量上传`} aria-busy={running}>
     <div className="batch-upload-heading">
-      <div><h3>添加摄影作品</h3><p>一次选择多张，按选择顺序追加。支持 JPEG、PNG、WebP，每张最多 25MB。</p></div>
+      <div><h3>添加摄影作品</h3><p>一次选择多张，按选择顺序追加。支持 JPEG、PNG、WebP，每张最多 {compressionMode === "original" ? "25" : "100"}MB；使用上方选择的图片上传方式。</p></div>
       <Button variant="outline" disabled={busy || running} onClick={() => input.current?.click()}><ImagePlus/>{running ? "正在上传…" : "批量上传照片"}</Button>
       <input ref={input} className="sr-only" type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={busy || running} onChange={chooseFiles} aria-label="选择系列照片（可多选）"/>
     </div>
@@ -100,6 +101,7 @@ export function SeriesPhotoUpload({ series, csrfToken, busy, onBusyChange, onPho
       <ol className="batch-upload-list">
         {items.map(item => <li key={item.id} data-state={item.state}>
           <div className="batch-file-info"><span className="batch-file-name" title={item.file.name}>{item.file.name}</span><span className="batch-file-status">{item.state === "done" && <Check size={14} aria-hidden="true"/>}{labels[item.state]}</span></div>
+          {item.preparedSize !== undefined && <p className="batch-file-size">图片体积：{formatImageSize(item.file.size)} → {formatImageSize(item.preparedSize)}{item.preparedSize < item.file.size && ` · 减少 ${Math.round((1 - item.preparedSize / item.file.size) * 100)}%`}</p>}
           <progress value={item.progress} max={100} aria-label={`${item.file.name}上传进度`}/>
           {item.error && <p className="batch-file-error">{item.error}</p>}
         </li>)}

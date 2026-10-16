@@ -9,8 +9,9 @@ export type PhotoUploadItem = {
   error?: string;
   order?: number;
   photo?: Photo;
+  preparedSize?: number;
 };
-type DisplayImage = { blob: Blob; width: number; height: number };
+type DisplayImage = { blob: Blob; width: number; height: number; original?: File };
 
 export async function uploadPhotoBatch(items: PhotoUploadItem[], options: {
   seriesId: string;
@@ -33,11 +34,12 @@ export async function uploadPhotoBatch(items: PhotoUploadItem[], options: {
       if (!item.photo) {
         if (!["image/jpeg", "image/png", "image/webp"].includes(item.file.type)) throw new Error("仅支持 JPEG、PNG 或 WebP 图片");
         if (!item.file.size) throw new Error("图片文件为空");
-        if (item.file.size > 25 * 1024 * 1024) throw new Error("每张图片不能超过 25MB");
+        if (item.file.size > 100 * 1024 * 1024) throw new Error("每张图片不能超过 100MB");
         update("processing", 5);
         const display = await options.prepare(item.file);
+        item.preparedSize = (display.original ?? item.file).size;
         update("uploading", 10);
-        const media = await options.upload(item.file, display, progress => update("uploading", 10 + Math.round(progress * 80)));
+        const media = await options.upload(display.original ?? item.file, display, progress => update("uploading", 10 + Math.round(progress * 80)));
         item.photo = {
           id: item.id, seriesId: options.seriesId, imageUrl: media.imageUrl, originalUrl: media.originalUrl,
           width: display.width, height: display.height, alt: item.file.name.replace(/\.[^.]+$/, "").slice(0, 500) || "摄影作品",

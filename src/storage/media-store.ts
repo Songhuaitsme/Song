@@ -39,18 +39,31 @@ export async function listMedia(includeDeleted=false):Promise<MediaAsset[]>{
 }
 
 export async function getMediaObject(key:string){if(!env.BUCKET||!validObjectKey(key))return null;return env.BUCKET.get(key);}
+export async function findExistingMedia(checksum: string) {
+  const db = getDatabase();
+  if (!db || !/^[a-f0-9]{64}$/.test(checksum)) return null;
+  const row = await db.prepare("SELECT id,display_url,original_url FROM media_assets WHERE checksum=? AND deleted_at IS NULL").bind(checksum).first<{id:string;display_url:string;original_url:string}>();
+  return row ? { id: row.id, imageUrl: row.display_url, originalUrl: row.original_url } : null;
+}
 export async function finishDirectUpload(input: DirectUploadTicket) {
   const bucket = env.BUCKET, db = getDatabase();
   if (!bucket || !db) throw new Error("图片存储暂时不可用");
-  const [original, display] = await Promise.all([bucket.get(input.originalKey), bucket.get(input.displayKey)]);
+  const sharedImage = input.originalKey === input.displayKey;
+  const [original, display = original] = await Promise.all(sharedImage ? [bucket.get(input.originalKey)] : [bucket.get(input.originalKey), bucket.get(input.displayKey)]);
   if (!original || !display) throw new Error("图片尚未上传完成，请重试");
-  const [originalDigest, displayDigest] = await Promise.all([original.arrayBuffer().then(checksum), display.arrayBuffer().then(checksum)]);
+  const [originalDigest, displayDigest = originalDigest] = await Promise.all(sharedImage ? [original.arrayBuffer().then(checksum)] : [original.arrayBuffer().then(checksum), display.arrayBuffer().then(checksum)]);
   if (original.size !== input.size || display.size !== input.displaySize || originalDigest !== input.checksum || displayDigest !== input.displayChecksum || original.httpMetadata?.contentType !== input.mimeType || display.httpMetadata?.contentType !== "image/webp") {
-    await bucket.delete([input.originalKey, input.displayKey]);
+    await bucket.delete([...new Set([input.originalKey, input.displayKey])]);
     throw new Error("图片校验失败，请重新上传");
   }
   const stamp = Date.now();
-  await db.prepare("INSERT OR IGNORE INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)").bind(input.id,input.originalKey,input.displayKey,assetUrl(input.originalKey),assetUrl(input.displayKey),input.fileName,input.mimeType,input.checksum,"",input.size,input.width,input.height,"private",input.assignment,stamp,stamp).run();
+  const inserted = await db.prepare("INSERT OR IGNORE INTO media_assets (id,original_key,display_key,original_url,display_url,file_name,mime_type,checksum,perceptual_hash,size,width,height,access,assignment,version,created_at,updated_at,deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)").bind(input.id,input.originalKey,input.displayKey,assetUrl(input.originalKey),assetUrl(input.displayKey),input.fileName,input.mimeType,input.checksum,"",input.size,input.width,input.height,"private",input.assignment,stamp,stamp).run();
+  if (inserted?.meta?.changes === 0) {
+    const existing = await findExistingMedia(input.checksum);
+    if (existing?.id !== input.id) await bucket.delete([...new Set([input.originalKey, input.displayKey])]);
+    if (!existing) throw new Error("媒体登记失败，请重试");
+    return existing;
+  }
   return { id: input.id, imageUrl: assetUrl(input.displayKey), originalUrl: assetUrl(input.originalKey) };
 }
 export async function putSyncedObject(key:string,body:ArrayBuffer,contentType:string){if(!env.BUCKET||!validObjectKey(key))throw new Error("图片存储暂时不可用");await env.BUCKET.put(key,body,{httpMetadata:{contentType,cacheControl:"private, no-store"}});}

@@ -6,6 +6,9 @@
   "compatibility_date": "2026-05-15",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "routes": [
+    { "pattern": "sonforu.work", "custom_domain": true }
+  ],
   "vars": {
     "LOCAL_DEV": "0",
     "R2_ACCOUNT_ID": "92c143b104fca6981f7219a50d672889",

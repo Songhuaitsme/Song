@@ -380,6 +380,11 @@ html:not([data-text-standards="2"]) [data-copy-page="essay"] .essay-article head
   background: var(--paper);
 }
 
+.upload-compression-settings { margin: 24px 0; padding: 20px; border: 1px solid var(--line); border-radius: 6px; background: #f7f7f480; }
+.upload-compression-settings > label { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 17px; }
+.upload-compression-settings select { max-width: 100%; }
+.upload-compression-settings > p { margin: 10px 0 0; color: var(--quiet); font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.series-photo-upload .batch-file-size { margin: 6px 0; color: var(--quiet); font-size: 14px; line-height: 1.7; }
 .series-photo-upload { margin-top: 24px; padding: 24px; border: 1px dashed #c5cbc0; border-radius: 6px; background: #f7f7f480; }
 .batch-upload-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .batch-upload-heading h3 { margin: 0 0 8px; font-size: 20px; }

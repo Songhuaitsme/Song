@@ -55,3 +55,32 @@ test("direct upload completion verifies both files before recording a private as
   assert.equal(recorded[12], "private");
   assert.equal(recorded[7], hash(original));
 });
+
+test("shared compressed media is read and verified once with both URLs using the display asset", async () => {
+  const bytes = new TextEncoder().encode("compressed webp"), reads = [], digests = [];
+  let recorded;
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  const { finishDirectUpload } = await mediaStore({ get: async key => {
+    reads.push(key);
+    return { size: bytes.length, httpMetadata: { contentType: "image/webp" }, arrayBuffer: async () => { digests.push(key); return bytes.buffer; } };
+  } }, { prepare: () => ({ bind: (...values) => ({ run: async () => { recorded = values; } }) }) });
+  const result = await finishDirectUpload({ id: "asset", originalKey: "media/display/shared.webp", displayKey: "media/display/shared.webp", size: bytes.length, displaySize: bytes.length, checksum: hash, displayChecksum: hash, fileName: "photo.webp", mimeType: "image/webp", width: 800, height: 600, assignment: "series:one" });
+  assert.equal(result.originalUrl, result.imageUrl);
+  assert.deepEqual(reads, ["media/display/shared.webp"]);
+  assert.deepEqual(digests, reads);
+  assert.equal(recorded[1], recorded[2]);
+  assert.equal(recorded[12], "private");
+});
+
+test("a concurrent duplicate registration returns the existing asset and removes only the redundant object", async () => {
+  const bytes = new TextEncoder().encode("compressed webp"), deleted = [];
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  const existing = { id: "existing", display_url: "/api/assets/media/display/existing.webp", original_url: "/api/assets/media/display/existing.webp" };
+  const { finishDirectUpload } = await mediaStore({
+    get: async () => ({ size: bytes.length, httpMetadata: { contentType: "image/webp" }, arrayBuffer: async () => bytes.buffer }),
+    delete: async keys => deleted.push(...keys),
+  }, { prepare: () => ({ bind: () => ({ run: async () => ({ meta: { changes: 0 } }), first: async () => existing }) }) });
+  const result = await finishDirectUpload({ id: "new", originalKey: "media/display/new.webp", displayKey: "media/display/new.webp", size: bytes.length, displaySize: bytes.length, checksum: hash, displayChecksum: hash, fileName: "photo.webp", mimeType: "image/webp", width: 100, height: 100, assignment: "unassigned" });
+  assert.equal(result.id, "existing"); assert.equal(result.imageUrl, existing.display_url);
+  assert.deepEqual(deleted, ["media/display/new.webp"]);
+});
