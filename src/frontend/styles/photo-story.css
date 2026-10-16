@@ -7,7 +7,6 @@
 .story-editorial .story-hero { width: var(--story-width); }
 
 .story-editorial .story-lede { width: min(680px, var(--story-width)); margin: 0 auto; padding: 64px 0 0; text-align: left; }
-.story-lede-label { margin: 0 0 20px; color: var(--quiet); font-size: 16px; letter-spacing: .12em; }
 .story-lede-summary { margin: 0; font-family: var(--detail-font); font-size: 20px; line-height: 2; white-space: pre-line; overflow-wrap: anywhere; }
 .story-editorial .photo-story { width: var(--story-width); display: grid; gap: var(--story-row-gap); margin: 64px auto; }
 .story-photo-row { display: grid; grid-template-columns: var(--story-columns); gap: var(--story-image-gap); align-items: start; min-width: 0; }
@@ -43,14 +42,13 @@
   .story-lede-summary, .story-prose { font-size: 19px; }
   .story-photo-caption { font-size: 18px; }
   .story-chapter-title { font-size: 28px; }
-  .story-lede-label, .story-closing-label, .story-chapter-heading > p, .story-photo-meta, .story-editorial .story-end { font-size: 15px; }
+  .story-closing-label, .story-chapter-heading > p, .story-photo-meta, .story-editorial .story-end { font-size: 15px; }
   .story-end > a { font-size: 16px; }
 }
 
 @media (max-width: 767px) {
   .story-editorial { --story-row-gap: 32px; --story-image-gap: 32px; }
   .story-editorial .story-lede { padding-top: 32px; }
-  .story-lede-label { margin-bottom: 16px; font-size: 14px; }
   .story-lede-summary { font-size: 17px; }
   .story-editorial .photo-story { margin-block: 32px; }
   .story-photo-row { grid-template-columns: minmax(0, 1fr); }

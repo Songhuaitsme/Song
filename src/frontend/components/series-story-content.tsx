@@ -5,16 +5,15 @@ import { EditableText } from "./editable-text";
 import { PhotoStory } from "./photo-story";
 import { layoutPhotos } from "@/shared/series-layout";
 
-export function SeriesStoryContent({ series, editor, labels, ledeLabel = "摄影系列" }: {
+export function SeriesStoryContent({ series, editor, labels }: {
   series: Series; editor?: { enabled: boolean; csrf: string };
-  labels?: { close: string; prev: string; next: string }; ledeLabel?: string;
+  labels?: { close: string; prev: string; next: string };
 }) {
   const narrative = series.narrative;
   const intro = narrative?.intro.trim() ? narrative.intro : series.description;
   const writingLink = `/studio?tab=series#series-text-${series.id}`;
   return <>
     {(intro.trim() || editor?.enabled) && <div className="story-lede">
-      {ledeLabel && <p className="story-lede-label" data-text-page="story" data-text-role="label"><EditableText textPage="story" textRole="label" value={ledeLabel} field="storyLede" enabled={editor?.enabled ?? false} csrf={editor?.csrf ?? ""}/></p>}
       {narrative?.intro.trim() ? <div className="story-intro">{intro.split(/\n\s*\n/).map((paragraph, index) => <p key={index} className="story-lede-summary" data-text-page="story" data-text-role="summary">{paragraph}</p>)}</div> : <p className="story-lede-summary" data-text-page="story" data-text-role="summary"><EditableText textPage="story" textRole="summary" value={series.description || "添加系列导语或简介"} editValue={series.description} field="description" entity="series" id={series.id} enabled={editor?.enabled ?? false} csrf={editor?.csrf ?? ""}/></p>}
       {editor?.enabled && <a className="story-writing-link" data-text-page="story" data-text-role="link" href={writingLink}>编辑系列文字</a>}
     </div>}

@@ -47,7 +47,7 @@ export function SeriesStoryPreview({ series, copy }: { series: Series; copy: Sit
         {series.coverUrl && <img className="story-hero-image" src={series.coverUrl} alt=""/>}<div className="story-hero-shade"/>
         <div className="story-hero-copy"><p className="eyebrow" data-text-page="story" data-text-role="overlayLabel">{copy.values.storyLabel}</p><h1 data-text-page="story" data-text-role="overlayTitle">{series.title}</h1><div className="story-hero-meta"><span data-text-page="story" data-text-role="overlayLabel">{String(series.photos.length).padStart(2, "0")} {copy.values.photographs}</span></div></div>
       </header>
-      <SeriesStoryContent series={series} ledeLabel={copy.values.storyLede} labels={{ close: copy.values.photoClose, prev: copy.values.photoPrev, next: copy.values.photoNext }}/>
+      <SeriesStoryContent series={series} labels={{ close: copy.values.photoClose, prev: copy.values.photoPrev, next: copy.values.photoNext }}/>
     </main>, frameDocument.body)}
   </div>;
 }
